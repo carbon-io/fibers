@@ -1,0 +1,20 @@
+{
+  "name": "fibers",
+  "version": "0.2.0",
+  "description": "Fibers",
+  "keywords": ["fibers", "carbon-io"],
+  "contributors": [
+    "Will Shulman <will@objectlabs.com>"
+  ],
+  "repository" : { 
+    "type" : "git",
+    "url" : "https://github.com/carbon-io/fibers.git"
+  },
+  
+  "main": "index.js",
+  "engines": { "node": ">= 4.0.0" },
+  "dependencies" : {
+    "fibers-utils": "git+ssh://git@github.com:objectlabs/fibers-utils.git#v1.0.4"
+  },
+  "preferGlobal": false
+}
