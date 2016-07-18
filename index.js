@@ -1,67 +1,57 @@
-/*******************************************************************************
- *
- * Copyright (c) 2012 ObjectLabs Corporation
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
-
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-var spawn = require('fibers-utils').spawn
+var Fiber = require("fibers")
+require('fibrous')
 
 /*******************************************************************************
  * __
  */
-function __(f, cb) {
-  if (cb) {
-    spawn(f, 
-          function(result) {
-            cb(null, result)
-          },
-          function(err) {
-            cb(err)
-          })
-  } else {
-    spawn(f)
-  }
-}
-
-__.main = function(mod) {
-  return function(f) {
-    if (require.main === mod) {
-      spawn(f)
+function __(mod) {
+  var result = function(f, cb) {
+    if (cb) {
+      spawn(f, 
+            function(result) {
+              cb(null, result)
+            },
+            function(err) {
+              cb(err)
+            })
     } else {
-      f()
+      spawn(f)
     }
   }
+  result.main = function(f, cb) {
+    if (require.main === mod) {
+      if (cb) {
+        spawn(f, 
+              function(result) {
+                cb(null, result)
+              },
+              function(err) {
+                cb(err)
+              })
+      } else {
+        spawn(f)
+      }
+    } else {
+      var result = f()
+      if (cb) {
+        return(cb(null, result))
+      }
+    }
+  }    
+  return result
 }
 
 /*******************************************************************************
  * __f
  */
 /*
-function __f(f) {
-  return function() {
-    __(f)
+  function __f(f) {
+    return function() {
+      __(f)
+    }
   }
-}
-
+  
 OR
-(
 
 function __f(f) {
   __(f(arguments))
@@ -77,10 +67,86 @@ function f__(f) {
 
 */
 
-/*******************************************************************************
- * exports
+/****************************************************************************************************
+ * syncInvoke
+ *
+ * Based on technique used by 0ctave and olegp:
+ *     (https://github.com/0ctave/node-sync/blob/master/lib/sync.js)
+ *     (https://github.com/olegp/mongo-sync/blob/master/lib/mongo-sync.js)
+ *
+ * @param {Object} that - receiver
+ * @param {String} method - name of method
+ * @param {Array} args
+ *
+ * @return {*} returns what the method would have returned via the supplied callback
+               callback accepted by invoked async method must be of form f(err, value)
+ * @throws {Error} 
+ *
+ * @ignore
  */
-module.exports = __
+function syncInvoke(that, method, args) {
+  var result;
+  var fiber = Fiber.current
+  var yielded = false
+  var callbackCalled = false
+  var wasError = false
 
-module.exports.__ = __ // XXX might want to decide
-//module.exports.__f = __f // XXX might want to decide
+  // augment original args with callback
+  args = args ? Array.prototype.slice.call(args) : []
+  args.push(function(error, value) {
+    callbackCalled = true
+    if (error) {
+      wasError = true
+    }
+    if (yielded) { // this may or may not occur after the yield() call below
+      fiber.run(error || value)
+    } else {
+      result = error || value
+    }
+  });
+
+  // apply() may or may not result in callback being called synchronously
+  that[method].apply(that, args)
+  if (!callbackCalled) { // check if apply() called callback
+    yielded = true
+    result = Fiber.yield()
+  }
+
+  if (wasError) {
+    if (result instanceof Error){
+      throw result
+    } else {
+      var errorMsg = result.message || JSON.stringify(result)
+      throw new Error(errorMsg)
+    }
+  }
+  return result
+}
+
+/****************************************************************************************************
+ * spawn
+ *
+ * @param {Function} f - function to spawn within a Fiber
+ * @param {Function} next - optional callback
+ * @param {Function} error - optional callback
+ */
+function spawn(f, next, error) {
+  Fiber(function() {
+    try {
+      var result = f();
+      if (next) { next(result); }
+    } catch(e) {
+      console.error(e.stack);
+      if (error) { error(e); }
+    }
+  }).run()
+}
+
+/****************************************************************************************************
+ * module.exports
+ */
+module.exports = {
+  __:  __,
+  syncInvoke: syncInvoke, // Backward compat
+  spawn: spawn // Backward compat  
+}

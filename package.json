@@ -14,7 +14,8 @@
   "main": "index.js",
   "engines": { "node": ">= 4.0.0" },
   "dependencies" : {
-    "fibers-utils": "git+ssh://git@github.com:objectlabs/fibers-utils.git#v1.0.4"
+    "fibers" : "1.0.*",
+    "fibrous": "git+ssh://git@github.com:carbon-io/fibrous.git#v0.4.1-ml"
   },
   "preferGlobal": false
 }
