@@ -1,5 +1,5 @@
 {
-  "name": "fibers",
+  "name": "@carbon-io/fibers",
   "version": "0.2.0",
   "description": "Fibers",
   "keywords": ["fibers", "carbon-io"],
