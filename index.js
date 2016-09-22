@@ -124,6 +124,24 @@ function syncInvoke(that, method, args) {
 }
 
 /****************************************************************************************************
+ * getPoolSize
+ *
+ * @returns Fiber's current pool size
+ */
+function getFiberPoolSize() {
+  return Fiber.poolSize
+}
+
+/****************************************************************************************************
+ * setPoolSize
+ *
+ * @param {Integer} poolSize - set Fiber's pool size to poolSize
+ */
+function setFiberPoolSize(poolSize) {
+  Fiber.poolSize = poolSize
+}
+
+/****************************************************************************************************
  * spawn
  *
  * @param {Function} f - function to spawn within a Fiber
@@ -147,6 +165,8 @@ function spawn(f, next, error) {
  */
 module.exports = {
   __:  __,
+  getFiberPoolSize: getFiberPoolSize,
+  setFiberPoolSize: setFiberPoolSize,
   syncInvoke: syncInvoke, // Backward compat
   spawn: spawn // Backward compat  
 }
