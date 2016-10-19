@@ -1,5 +1,5 @@
 var Fiber = require("fibers")
-require('fibrous')
+require('@carbon-io/fibrous')
 
 /*******************************************************************************
  * __
