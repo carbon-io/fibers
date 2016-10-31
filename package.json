@@ -1,6 +1,6 @@
 {
   "name": "@carbon-io/fibers",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Fibers",
   "keywords": ["fibers", "carbon-io"],
   "contributors": [
@@ -15,7 +15,7 @@
   "engines": { "node": ">= 4.0.0" },
   "dependencies" : {
     "fibers" : "1.0.*",
-    "@carbon-io/fibrous": "carbon-io/fibrous.git#v0.4.2-ml"
+    "@carbon-io/fibrous": "~0.4.2-ml"
   },
   "preferGlobal": false
 }
