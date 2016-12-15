@@ -6,16 +6,26 @@
   "contributors": [
     "Will Shulman <will@objectlabs.com>"
   ],
-  "repository" : { 
-    "type" : "git",
-    "url" : "https://github.com/carbon-io/fibers.git"
+  "repository": { 
+    "type": "git",
+    "url": "https://github.com/carbon-io/fibers.git"
   },
   
   "main": "index.js",
   "engines": { "node": ">= 4.0.0" },
-  "dependencies" : {
-    "fibers" : "1.0.x",
+  "devDependencies": {
+      "@carbon-io/test-tube": "0.2.x",
+      "@carbon-io/atom": "0.3.x",
+      "@carbon-io/bond": "0.2.x",
+      "sinon": "1.17.x",
+      "mockery": "2.0.x"
+  },
+  "dependencies": {
+    "fibers": "1.0.x",
     "@carbon-io/fibrous": "0.4.2-ml"
+  },
+  "scripts": {
+      "test": "node test"
   },
   "preferGlobal": false
 }

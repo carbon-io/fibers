@@ -7,34 +7,24 @@ require('@carbon-io/fibrous')
 function __(mod) {
   var result = function(f, cb) {
     if (cb) {
-      spawn(f, 
-            function(result) {
-              cb(null, result)
-            },
-            function(err) {
-              cb(err)
-            })
+      return spawn(f, 
+                   function(result) {
+                     cb(null, result)
+                   },
+                   function(err) {
+                     cb(err)
+                   })
     } else {
-      spawn(f)
+      return spawn(f)
     }
   }
   result.main = function(f, cb) {
     if (require.main === mod) {
-      if (cb) {
-        spawn(f, 
-              function(result) {
-                cb(null, result)
-              },
-              function(err) {
-                cb(err)
-              })
-      } else {
-        spawn(f)
-      }
+      return result(f, cb)
     } else {
       var result = f()
       if (cb) {
-        return(cb(null, result))
+        return cb(null, result)
       }
     }
   }    
