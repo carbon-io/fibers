@@ -137,15 +137,26 @@ function setFiberPoolSize(poolSize) {
  * @param {Function} f - function to spawn within a Fiber
  * @param {Function} next - optional callback
  * @param {Function} error - optional callback
+ * @returns result - if `next` is not passed, the result of `f` will be returned
+ * @throws {Exception} - if no error callback is passed, any exception will be
+ *                       bubbled up
  */
 function spawn(f, next, error) {
-  Fiber(function() {
+  return Fiber(function() {
     try {
       var result = f();
-      if (next) { next(result); }
+      if (next) { 
+        next(result)
+      } else {
+        Fiber.yield(result)
+      }
     } catch(e) {
       console.error(e.stack);
-      if (error) { error(e); }
+      if (error) { 
+        error(e)
+      } else {
+        throw e
+      }
     }
   }).run()
 }
