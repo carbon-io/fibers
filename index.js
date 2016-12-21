@@ -1,3 +1,7 @@
+var inspect = require('util').inspect
+
+var debug = require('debug')('@carbon-io/fibers')
+
 var Fiber = require("fibers")
 require('@carbon-io/fibrous')
 
@@ -5,8 +9,10 @@ require('@carbon-io/fibrous')
  * __
  */
 function __(mod) {
+  // XXX: can we substitute undefined for null when calling cb
   var result = function(f, cb) {
     if (cb) {
+      // if we've got a callback, then run async
       return spawn(f, 
                    function(result) {
                      cb(null, result)
@@ -14,18 +20,29 @@ function __(mod) {
                    function(err) {
                      cb(err)
                    })
-    } else {
-      return spawn(f)
     }
+    // otherwise block
+    return spawn(f)
   }
   result.main = function(f, cb) {
     if (require.main === mod) {
+      // DRY
       return result(f, cb)
-    } else {
-      var result = f()
+    }
+    // otherwise we just run the function synchronously and pass the result back
+    // via the callback if one is supplied or as the return value of this function
+    var ret = undefined
+    try {
+      ret = f()
       if (cb) {
-        return cb(null, result)
+        return cb(null, ret)
       }
+      return ret
+    } catch (e) {
+      if (cb) {
+        return cb(e)
+      }
+      throw e
     }
   }    
   return result
@@ -142,24 +159,59 @@ function setFiberPoolSize(poolSize) {
  *                       bubbled up
  */
 function spawn(f, next, error) {
-  return Fiber(function() {
+  var caughtErr = false
+  var fiber = Fiber(function() {
     try {
-      var result = f();
+      var ret = f();
       if (next) { 
-        next(result)
+        return next(ret)
       } else {
-        Fiber.yield(result)
+        Fiber.yield(ret)
       }
     } catch(e) {
-      console.error(e.stack);
+      caughtErr = true
+      debug(e.stack);
       if (error) { 
-        error(e)
+        return error(e)
       } else {
         throw e
       }
+    } finally {
+      var fiberIndex = spawn.fibers.indexOf(fiber)
+      if (fiberIndex == -1) {
+        throw new Error('Failed to find current fiber in spawn.fibers')
+      }
+      // remove our handle on this fiber so that it will get garbage collected
+      spawn.fibers.splice(fiberIndex, 1)
     }
-  }).run()
+  })
+  // maintain a handle for this fiber so it doesn't get garbage collected
+  spawn.fibers.push(fiber)
+  if (!next) {
+    // if `next` is not defined, then execute synchronously
+    var ret = fiber.run()
+    if (!caughtErr) {
+      // in this case we know yield was called, so force the Fiber to complete
+      fiber.run()
+    }
+    // return the result
+    return ret
+  }
+  // otherwise, run async on nextTick 
+  process.nextTick(function() {
+    try {
+      fiber.run()
+    } catch (e) {
+      // we will only get here if next is defined, but error is not
+      // assume that the caller doesn't care if there is an error, but log
+      // to `debug` in case
+      debug('exception caught with error undefined in fibers.spawn: ' +
+            inspect(e))
+    }
+  })
 }
+
+spawn.fibers = []
 
 /****************************************************************************************************
  * module.exports
