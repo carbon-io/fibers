@@ -21,8 +21,9 @@
       "mockery": "2.0.x"
   },
   "dependencies": {
-    "fibers": "1.0.x",
-    "@carbon-io/fibrous": "0.4.2-ml"
+    "@carbon-io/fibrous": "0.4.2-ml",
+    "debug": "2.4.x",
+    "fibers": "1.0.x"
   },
   "scripts": {
       "test": "node test"
