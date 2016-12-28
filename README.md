@@ -1,3 +1,3 @@
 # fibers
 
-[![Build Status](https://travis-ci.org/carbon-io/fibers.svg?branch=add-tests)](https://travis-ci.org/carbon-io/fibers)
+[![Build Status](https://travis-ci.org/carbon-io/fibers.svg?branch=master)](https://travis-ci.org/carbon-io/fibers)
