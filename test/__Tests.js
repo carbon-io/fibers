@@ -51,7 +51,7 @@ module.exports = o({
     // __ tests
     o({
       _type: __Test,
-      name: '__NoCbTest',
+      name: 'noCbTest',
       doTest: function() {
         var x = __(function() {
           return 1
@@ -62,7 +62,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__NoCbErrTest',
+      name: 'noCbErrTest',
       doTest: function() {
         var self = this
         var x = undefined
@@ -78,7 +78,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__CbTest',
+      name: 'cbTest',
       teardown: function() {
       },
       doTest: function(done) {
@@ -99,7 +99,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__CbErrTest',
+      name: 'cbErrTest',
       doTest: function(done) {
         var self = this
         var x = 0
@@ -120,7 +120,7 @@ module.exports = o({
     // __.main tests with mod == require.main
     o({
       _type: __Test,
-      name: '__MainMainNoCbTest',
+      name: 'mainMainNoCbTest',
       mod: require.main,
       doTest: function() {
         var x = __.main(function() {
@@ -132,7 +132,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__MainMainNoCbErrTest',
+      name: 'mainMainNoCbErrTest',
       mod: require.main,
       doTest: function() {
         var self = this
@@ -149,7 +149,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__MainMainCbTest',
+      name: 'mainMainCbTest',
       mod: require.main,
       doTest: function(done) {
         var x = 0
@@ -169,7 +169,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__MainMainCbErrTest',
+      name: 'mainMainCbErrTest',
       mod: require.main,
       doTest: function(done) {
         var self = this
@@ -191,7 +191,7 @@ module.exports = o({
     // __.main tests with mod != require.main
     o({
       _type: __Test,
-      name: '__MainNoMainNoCbTest',
+      name: 'mainNoMainNoCbTest',
       doTest: function() {
         var x = __.main(function() {
           return 1
@@ -202,7 +202,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__MainNoMainNoCbErrTest',
+      name: 'mainNoMainNoCbErrTest',
       doTest: function() {
         var self = this
         var x = undefined
@@ -218,7 +218,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__MainNoMainCbTest',
+      name: 'mainNoMainCbTest',
       doTest: function() {
         var x = 0
         var exp = undefined
@@ -235,7 +235,7 @@ module.exports = o({
     }),
     o({
       _type: __Test,
-      name: '__MainNoMainCbErrTest',
+      name: 'mainNoMainCbErrTest',
       doTest: function() {
         var self = this
         var x = 0
