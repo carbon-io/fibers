@@ -2,7 +2,7 @@ var inspect = require('util').inspect
 
 var debug = require('debug')('@carbon-io/fibers')
 
-var Fiber = require("fibers")
+var Fiber = require('fibers')
 require('@carbon-io/fibrous')
 
 /*******************************************************************************
