@@ -3,6 +3,7 @@ var inspect = require('util').inspect
 var debug = require('debug')('@carbon-io/fibers')
 
 var Fiber = require('fibers')
+var Future = require('fibers/future')
 require('@carbon-io/fibrous')
 
 /*******************************************************************************
@@ -159,22 +160,40 @@ function setFiberPoolSize(poolSize) {
  *                       bubbled up
  */
 function spawn(f, next, error) {
-  var caughtErr = false
+  // use to retrieve the return value if f yields
+  var future = new Future
+  // the return value for f
+  var ret = undefined
+  // the error object thrown by f
+  var err = undefined
+  // whether or not f yielded
+  var yielded = false
+
   var fiber = Fiber(function() {
     try {
-      var ret = f();
+      ret = f();
       if (next) { 
         return next(ret)
       } else {
-        Fiber.yield(ret)
+        if (!yielded) {
+          // does the fiber exit here with the return, or does run need to be 
+          // called again
+          return 
+        } else {
+          return future.return(ret)
+        }
       }
     } catch(e) {
-      caughtErr = true
+      err = e
       debug(e.stack);
       if (error) { 
         return error(e)
       } else {
-        throw e
+        if (typeof next === 'undefined' && yielded) {
+          return future.throw(e)
+        } else {
+          throw e
+        }
       }
     } finally {
       var fiberIndex = spawn.fibers.indexOf(fiber)
@@ -185,18 +204,26 @@ function spawn(f, next, error) {
       spawn.fibers.splice(fiberIndex, 1)
     }
   })
+
   // maintain a handle for this fiber so it doesn't get garbage collected
   spawn.fibers.push(fiber)
   if (!next) {
-    // if `next` is not defined, then execute synchronously
-    var ret = fiber.run()
-    if (!caughtErr) {
-      // in this case we know yield was called, so force the Fiber to complete
-      fiber.run()
+    fiber.run()
+    if (typeof ret != 'undefined') {
+      return ret
     }
-    // return the result
-    return ret
+    yielded = true
+    if (typeof err === 'undefined') {
+      ret = future.wait()
+      return ret
+    } else {
+      if (!error) {
+        throw caughtError
+      }
+      return
+    }
   }
+  
   // otherwise, run async on nextTick 
   process.nextTick(function() {
     try {
