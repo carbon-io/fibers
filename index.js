@@ -166,7 +166,8 @@ function getFibersCreated() {
  * @param {Function} error - optional callback
  * @returns result - if `next` is not passed, the result of `f` will be returned
  * @throws {Exception} - if no error callback is passed, any exception will be
- *                       bubbled up
+ *                       bubbled up if running synchronously, otherwise, errors
+ *                       will be lost
  */
 function spawn(f, next, error) {
   // use to retrieve the return value if f yields
