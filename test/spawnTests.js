@@ -229,15 +229,15 @@ module.exports = o({
       name: 'syncCallWithNestedAsyncCallUsingFutures',
       doTest: function(done) {
         var self = this
-        var val = undefined
-        val = spawn(function() {
-          var asyncFunc = function(cb) {
-            process.nextTick(function() {
-              cb(null, 1)
-            })
-          }
-          return asyncFunc.sync.call(this)
-        })
+        var val = spawn(
+          function() {
+            var asyncFunc = function(cb) {
+              process.nextTick(function() {
+                cb(null, 1)
+              })
+            }
+            return asyncFunc.sync.call(this)
+          })
         assert.equal(val, 1)
         process.nextTick(function() {
           // this lets the spawned fiber run out so the spawn.fibers test in 

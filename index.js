@@ -161,7 +161,7 @@ function setFiberPoolSize(poolSize) {
  */
 function spawn(f, next, error) {
   // use to retrieve the return value if f yields
-  var future = new Future
+  var future = new Future()
   // the return value for f
   var ret = undefined
   // the error object thrown by f
@@ -176,11 +176,9 @@ function spawn(f, next, error) {
         return next(ret)
       } else {
         if (!yielded) {
-          // does the fiber exit here with the return, or does run need to be 
-          // called again
           return 
         } else {
-          return future.return(ret)
+          return future.return()
         }
       }
     } catch(e) {
@@ -208,13 +206,18 @@ function spawn(f, next, error) {
   // maintain a handle for this fiber so it doesn't get garbage collected
   spawn.fibers.push(fiber)
   if (!next) {
+    /*
+    if (typeof Fiber.current === 'undefined') {
+      throw new Error('spawn must be run within a fiber to block')
+    }
+    */
     fiber.run()
     if (typeof ret != 'undefined') {
       return ret
     }
     yielded = true
     if (typeof err === 'undefined') {
-      ret = future.wait()
+      future.wait()
       return ret
     } else {
       if (!error) {
