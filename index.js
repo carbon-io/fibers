@@ -206,11 +206,9 @@ function spawn(f, next, error) {
   // maintain a handle for this fiber so it doesn't get garbage collected
   spawn.fibers.push(fiber)
   if (!next) {
-    /*
     if (typeof Fiber.current === 'undefined') {
       throw new Error('spawn must be run within a fiber to block')
     }
-    */
     fiber.run()
     if (typeof ret != 'undefined') {
       return ret
