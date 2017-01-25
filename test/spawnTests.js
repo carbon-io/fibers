@@ -46,7 +46,7 @@ module.exports = o({
   },
   _teardown: function() {
     mockery.disable()
-    assert.equal(spawn.fibers.length, 0)
+    assert.equal(spawn._fibers._length, 0)
     spawn = undefined
     FiberSpy.resetAll()
     debugSpy.spy.reset()

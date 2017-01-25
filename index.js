@@ -150,6 +150,15 @@ function setFiberPoolSize(poolSize) {
 }
 
 /****************************************************************************************************
+ * getFibersCreated
+ *
+ * @returns The number of fibers created
+ */
+function getFibersCreated() {
+  return Fiber.fibersCreated
+}
+
+/****************************************************************************************************
  * spawn
  *
  * @param {Function} f - function to spawn within a Fiber
@@ -171,56 +180,81 @@ function spawn(f, next, error) {
 
   var fiber = Fiber(function() {
     try {
+      // execute f
+      // note: this may yield internally
       ret = f();
       if (next) { 
+        // if a callback is supplied then pass then pass on the result and exit the fiber
         return next(ret)
       } else {
+        // otherwise spawn is blocking
         if (!yielded) {
+          // if f executed without yielding, then no need for the future
           return 
         } else {
+          // otherwise, unblock the spawn call
           return future.return()
         }
       }
     } catch(e) {
-      err = e
       debug(e.stack);
+      // save the error
+      err = e
       if (error) { 
+        // if there's an error callback then throw it that way
         return error(e)
       } else {
         if (typeof next === 'undefined' && yielded) {
+          // if spawn is blocking and we yielded, then throw via the future
           return future.throw(e)
         } else {
+          // otherwise, just throw it
           throw e
         }
       }
     } finally {
-      var fiberIndex = spawn.fibers.indexOf(fiber)
-      if (fiberIndex == -1) {
+      // clean up 
+      var fiber_ = spawn._fibers[fiber.__spawnId]
+      if (typeof fiber_ === 'undefined') {
         throw new Error('Failed to find current fiber in spawn.fibers')
       }
       // remove our handle on this fiber so that it will get garbage collected
-      spawn.fibers.splice(fiberIndex, 1)
+      delete spawn._fibers[fiber.__spawnId]
+      --spawn._fibers._length
     }
   })
 
   // maintain a handle for this fiber so it doesn't get garbage collected
-  spawn.fibers.push(fiber)
+  fiber.__spawnId = spawn._getFiberId()
+  spawn._fibers[fiber.__spawnId] = fiber
+  ++spawn._fibers._length
+
   if (!next) {
+    // if a callback was not passed execute synchronously in this fiber
+    // first off, make sure we're in a fiber
     if (typeof Fiber.current === 'undefined') {
       throw new Error('spawn must be run within a fiber to block')
     }
+    // run the fiber
     fiber.run()
     if (typeof ret != 'undefined') {
+      // if ret is not undefined, then f executed without yielding, so return the result
       return ret
     }
-    yielded = true
     if (typeof err === 'undefined') {
+      // if err is undefined, then f yielded without error
+      yielded = true
+      // note: this will throw if there is an exception and there is no error callback
       future.wait()
+      // if future.wait returns, then we have a result, return it
       return ret
     } else {
+      // otherwise we didn't yield and there was an exception
       if (!error) {
-        throw caughtError
+        // if there was no error callback, then we need to throw it here
+        throw err
       }
+      // otherwise, the error was thrown via the error callback
       return
     }
   }
@@ -238,8 +272,11 @@ function spawn(f, next, error) {
     }
   })
 }
-
-spawn.fibers = []
+spawn._getFiberId = function() {
+  return spawn._fiberId++
+}
+spawn._fiberId = 0
+spawn._fibers = {_length: 0}
 
 /****************************************************************************************************
  * module.exports
@@ -248,6 +285,7 @@ module.exports = {
   __:  __,
   getFiberPoolSize: getFiberPoolSize,
   setFiberPoolSize: setFiberPoolSize,
+  getFibersCreated: getFibersCreated,
   syncInvoke: syncInvoke, // Backward compat
   spawn: spawn // Backward compat  
 }
