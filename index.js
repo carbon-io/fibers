@@ -93,7 +93,7 @@ function f__(f) {
  * @ignore
  */
 function syncInvoke(that, method, args) {
-  var result;
+  var result
   var fiber = Fiber.current
   var yielded = false
   var callbackCalled = false
@@ -111,7 +111,7 @@ function syncInvoke(that, method, args) {
     } else {
       result = error || value
     }
-  });
+  })
 
   // apply() may or may not result in callback being called synchronously
   that[method].apply(that, args)
@@ -174,6 +174,8 @@ function spawn(f, next, error) {
   var future = new Future()
   // the return value for f
   var ret = undefined
+  // disambiguate "undefined" return value
+  var returned = false
   // the error object thrown by f
   var err = undefined
   // whether or not f yielded
@@ -183,7 +185,8 @@ function spawn(f, next, error) {
     try {
       // execute f
       // note: this may yield internally
-      ret = f();
+      ret = f()
+      returned = true
       if (next) { 
         // if a callback is supplied then pass then pass on the result and exit the fiber
         return next(ret)
@@ -198,7 +201,7 @@ function spawn(f, next, error) {
         }
       }
     } catch(e) {
-      debug(e.stack);
+      debug(e.stack)
       // save the error
       err = e
       if (error) { 
@@ -238,8 +241,8 @@ function spawn(f, next, error) {
     }
     // run the fiber
     fiber.run()
-    if (typeof ret != 'undefined') {
-      // if ret is not undefined, then f executed without yielding, so return the result
+    if (returned) {
+      // if returned is true, then f executed without yielding, so return the result
       return ret
     }
     if (typeof err === 'undefined') {
