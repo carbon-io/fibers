@@ -10,6 +10,14 @@ var FiberSpy = sinon.spy(function(func) {
 FiberSpy.yield = Fiber.yield
 sinon.spy(FiberSpy, 'yield')
 
+Object.defineProperty(FiberSpy, 'current', {
+  enumerable: true,
+  configurable: false,
+  get: function() {
+    return Fiber.current
+  }
+})
+
 FiberSpy.resetAll = function() {
   FiberSpy.reset()
   FiberSpy.yield.reset()
