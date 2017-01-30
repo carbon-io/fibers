@@ -9,6 +9,10 @@ var Fiber = require('fibers')
 //       against resetting this property on Function.prototype.
 var Future = fibrous.Future
 
+var o = require('@carbon-io/atom').o(module).main
+var _o = require('@carbon-io/bond')._o(module)
+var testtube = require('@carbon-io/test-tube')
+
 /*******************************************************************************
  * __
  */
@@ -294,5 +298,13 @@ module.exports = {
   setFiberPoolSize: setFiberPoolSize,
   getFibersCreated: getFibersCreated,
   syncInvoke: syncInvoke, // Backward compat
-  spawn: spawn // Backward compat  
+  spawn: spawn, // Backward compat 
+  _Test: o({
+    _type: testtube.Test,
+    name: 'FibersTests',
+    tests: [
+      _o('./__Tests'),
+      _o('./spawnTests')
+    ]
+  })
 }
