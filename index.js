@@ -303,8 +303,8 @@ module.exports = {
     _type: testtube.Test,
     name: 'FibersTests',
     tests: [
-      _o('./__Tests'),
-      _o('./spawnTests')
+      _o('test/__Tests'),
+      _o('test/spawnTests')
     ]
   })
 }
