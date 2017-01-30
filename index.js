@@ -2,9 +2,12 @@ var inspect = require('util').inspect
 
 var debug = require('debug')('@carbon-io/fibers')
 
+var fibrous = require('@carbon-io/fibrous')
 var Fiber = require('fibers')
-var Future = require('fibers/future')
-require('@carbon-io/fibrous')
+// NOTE: we need to grab Future from fibrous since fibrous definies future on
+//       Function.prototype as an accessor descriptor and Future does not guard
+//       against resetting this property on Function.prototype.
+var Future = fibrous.Future
 
 /*******************************************************************************
  * __
