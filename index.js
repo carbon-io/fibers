@@ -279,6 +279,8 @@ function spawn(f, next, error) {
     }
   })
 }
+// Number.MAX_SAFE_INTEGER == 9007199254740991
+// this would roll over in 104249 days at 10**6 spawns/sec
 spawn._getFiberId = function() {
   return spawn._fiberId++
 }
