@@ -288,6 +288,10 @@ spawn._getFiberId = function() {
 spawn._fiberId = 0
 spawn._fibers = {_length: 0}
 
+function getTests() {
+  return [require('./test/__Tests'), require('./test/spawnTests')]
+}
+
 /****************************************************************************************************
  * module.exports
  */
@@ -298,12 +302,5 @@ module.exports = {
   getFibersCreated: getFibersCreated,
   syncInvoke: syncInvoke, // Backward compat
   spawn: spawn, // Backward compat 
-  _Test: {
-    _type: testtube.Test,
-    name: 'FibersTests',
-    tests: [
-      _o('./test/__Tests'),
-      _o('./test/spawnTests')
-    ]
-  }
+  _Test: getTests
 }
