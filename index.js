@@ -299,12 +299,12 @@ module.exports = {
   getFibersCreated: getFibersCreated,
   syncInvoke: syncInvoke, // Backward compat
   spawn: spawn, // Backward compat 
-  _Test: {
-    _type: testtube.Test,
-    name: 'FibersTests',
-    tests: [
+  //_Test: {
+  //  _type: testtube.Test,
+  //  name: 'FibersTests',
+  //  tests: [
       //_o('./test/__Tests'),
       //_o('./test/spawnTests')
-    ]
-  }
+  //  ]
+  //}
 }
