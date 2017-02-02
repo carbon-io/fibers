@@ -9,9 +9,6 @@ var Fiber = require('fibers')
 //       against resetting this property on Function.prototype.
 var Future = fibrous.Future
 
-var _o = require('@carbon-io/bond')._o(module)
-var testtube = require('@carbon-io/test-tube')
-
 /*******************************************************************************
  * __
  */
