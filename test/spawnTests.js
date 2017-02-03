@@ -39,7 +39,7 @@ module.exports = o({
   description: 'spawn tests',
   _setup: function(mod) {
     mockery.enable({
-      cleanCache: true,
+      useCleanCache: true,
       warnOnUnregistered: false,
       warnOnReplace: false
     })
