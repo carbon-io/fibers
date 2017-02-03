@@ -34,6 +34,7 @@ module.exports = o({
   description: '__ tests',
   _setup: function(mod) {
     mockery.enable({
+      cleanCache: true,
       warnOnUnregistered: false,
       warnOnReplace: false
     })
@@ -92,6 +93,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert.equal(result, 1)
             assert(!err)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -112,6 +115,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert(!result)
             assert(err instanceof Error)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -162,6 +167,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert.equal(result, 1)
             assert(!err)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -183,6 +190,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert(!result)
             assert(err instanceof Error)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
