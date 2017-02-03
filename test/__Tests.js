@@ -56,7 +56,7 @@ module.exports = o({
         var x = __(function() {
           return 1
         })
-        assert(FiberSpy.called)
+        assert(!FiberSpy.called)
         assert.equal(x, 1)
       }
     }),
@@ -72,7 +72,7 @@ module.exports = o({
             throw new Error(self.name)
           })
         }, Error)
-        assert(FiberSpy.called)
+        assert(!FiberSpy.called)
         assert.equal(x, 1)
       }
     }),
@@ -117,6 +117,80 @@ module.exports = o({
         })
       }
     }),
+    // __.detach tests
+    o({
+      _type: __Test,
+      name: 'detachNoCbTest',
+      doTest: function(done) {
+        var x = __.detach(function() {
+          return 1
+        })
+        assert(FiberSpy.called)
+        assert.equal(x(), 1)
+        setImmediate(function() {
+          done()
+        })
+      }
+    }),
+    /*
+    o({
+      _type: __Test,
+      name: 'noCbErrTest',
+      doTest: function() {
+        var self = this
+        var x = undefined
+        assert.throws(function() {
+          __(function() {
+            x = 1
+            throw new Error(self.name)
+          })
+        }, Error)
+        assert(!FiberSpy.called)
+        assert.equal(x, 1)
+      }
+    }),
+    o({
+      _type: __Test,
+      name: 'cbTest',
+      teardown: function() {
+      },
+      doTest: function(done) {
+        var x = 0
+        var exp = undefined
+        __(function() {
+          return x + 1
+        }, function(err, result) {
+          try {
+            assert(FiberSpy.called)
+            assert.equal(result, 1)
+            assert(!err)
+          } finally {
+            setImmediate(done)
+          }
+        })
+      }
+    }),
+    o({
+      _type: __Test,
+      name: 'cbErrTest',
+      doTest: function(done) {
+        var self = this
+        var x = 0
+        var exp = undefined
+        __(function() {
+          throw new Error(self.name)
+        }, function(err, result) {
+          try {
+            assert(FiberSpy.called)
+            assert(!result)
+            assert(err instanceof Error)
+          } finally {
+            setImmediate(done)
+          }
+        })
+      }
+    }),
+    */
     // __.main tests with mod == require.main
     o({
       _type: __Test,
@@ -126,7 +200,7 @@ module.exports = o({
         var x = __.main(function() {
           return 1
         })
-        assert(FiberSpy.called)
+        assert(!FiberSpy.called)
         assert.equal(x, 1)
       }
     }),
@@ -143,7 +217,7 @@ module.exports = o({
             throw new Error(self.name)
           })
         }, Error)
-        assert(FiberSpy.called)
+        assert(!FiberSpy.called)
         assert.equal(x, 1)
       }
     }),
@@ -251,6 +325,12 @@ module.exports = o({
         assert(exp instanceof Error)
       }
     }),
+    o({
+      _type: __Test,
+      name: 'mainNoMainCbErrTest',
+      doTest: function() {
+      }
+    })
   ]
 })
 

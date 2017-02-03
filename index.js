@@ -13,6 +13,7 @@ var Future = fibrous.Future
  * __
  */
 function __(mod) {
+  var detach = false
   // XXX: can we substitute undefined for null when calling cb
   var result = function(f, cb) {
     if (cb) {
@@ -23,10 +24,15 @@ function __(mod) {
                    },
                    function(err) {
                      cb(err)
-                   })
+                   },
+                   detach)
     }
     // otherwise block
-    return spawn(f)
+    return spawn(f, undefined, undefined, detach)
+  }
+  result.detach = function(f, cb) {
+    detach = true
+    return result(f, cb)
   }
   result.main = function(f, cb) {
     if (require.main === mod) {
@@ -41,14 +47,28 @@ function __(mod) {
       if (cb) {
         return cb(null, ret)
       }
+      if (detach) {
+        return function() {
+          return ret
+        }
+      }
       return ret
     } catch (e) {
       if (cb) {
         return cb(e)
       }
+      if (detach) {
+        return function() {
+          throw e
+        }
+      }
       throw e
     }
-  }    
+  }
+  result.main.detach = function(f, cb) {
+    detach = true
+    return result.main(f, cb)
+  }
   return result
 }
 
@@ -167,12 +187,16 @@ function getFibersCreated() {
  * @param {Function} f - function to spawn within a Fiber
  * @param {Function} next - optional callback
  * @param {Function} error - optional callback
+ * @param {Function} detach - run f asynchronously and return a function to wait
+ *                            on the result
  * @returns result - if `next` is not passed, the result of `f` will be returned
  * @throws {Exception} - if no error callback is passed, any exception will be
  *                       bubbled up if running synchronously, otherwise, errors
  *                       will be lost
  */
-function spawn(f, next, error) {
+function spawn(f, next, error, detach) {
+  // the new fiber
+  var fiber = undefined
   // use to retrieve the return value if f yields
   var future = new Future()
   // the return value for f
@@ -183,8 +207,8 @@ function spawn(f, next, error) {
   var err = undefined
   // whether or not f yielded
   var yielded = false
-
-  var fiber = Fiber(function() {
+  // wrapper function for f to be run in a new fiber
+  var fiberFunction = function() {
     try {
       // execute f
       // note: this may yield internally
@@ -192,25 +216,31 @@ function spawn(f, next, error) {
       returned = true
       if (next) { 
         // if a callback is supplied then pass then pass on the result and exit the fiber
-        return next(ret)
-      } else {
+        next(ret)
+      }
+      if (!next || detach) {
         // otherwise spawn is blocking
-        if (!yielded) {
-          // if f executed without yielding, then no need for the future
-          return 
-        } else {
-          // otherwise, unblock the spawn call
+        if (yielded) {
+          // if f yielded, unblock the spawn call
           return future.return()
+        } else {
+          // otherwise, executed without yielding, then no need for the future
+          return 
         }
       }
-    } catch(e) {
+      if (next) {
+        // return if next was defined and we didn't go the detach route
+        return
+      }
+    } catch (e) {
       debug(e.stack)
       // save the error
       err = e
       if (error) { 
         // if there's an error callback then throw it that way
-        return error(e)
-      } else {
+        error(e)
+      } 
+      if (!error || detach) {
         if (typeof next === 'undefined' && yielded) {
           // if spawn is blocking and we yielded, then throw via the future
           return future.throw(e)
@@ -218,6 +248,10 @@ function spawn(f, next, error) {
           // otherwise, just throw it
           throw e
         }
+      }
+      if (error) {
+        // return if error was defined and we didn't go the detach route
+        return
       }
     } finally {
       // clean up 
@@ -229,21 +263,10 @@ function spawn(f, next, error) {
       delete spawn._fibers[fiber.__spawnId]
       --spawn._fibers._length
     }
-  })
-
-  // maintain a handle for this fiber so it doesn't get garbage collected
-  fiber.__spawnId = spawn._getFiberId()
-  spawn._fibers[fiber.__spawnId] = fiber
-  ++spawn._fibers._length
-
-  if (!next) {
-    // if a callback was not passed execute synchronously in this fiber
-    // first off, make sure we're in a fiber
-    if (typeof Fiber.current === 'undefined') {
-      throw new Error('spawn must be run within a fiber to block')
-    }
-    // run the fiber
-    fiber.run()
+  }
+  // function used to block and wait for a result
+  var blockFunction = function() {
+    blockFunction.__runCalled.wait()
     if (returned) {
       // if returned is true, then f executed without yielding, so return the result
       return ret
@@ -253,7 +276,7 @@ function spawn(f, next, error) {
       yielded = true
       // note: this will throw if there is an exception and there is no error callback
       future.wait()
-      // if future.wait returns, then we have a result, return it
+      // when future.wait returns, then we have a result, return it
       return ret
     } else {
       // otherwise we didn't yield and there was an exception
@@ -265,7 +288,36 @@ function spawn(f, next, error) {
       return
     }
   }
+  blockFunction.__runCalled = new Future()
+
+  detach = detach ? true : false
+
+  if (!next && !detach) {
+    // if a callback was not passed execute synchronously in this fiber
+    // first off, make sure we're in a fiber
+    if (typeof Fiber.current === 'undefined') {
+      debug('trying to invoke spawn synchronously outside of a fiber, falling ' +
+            'back to async')
+      detach = true
+    } else {
+      try {
+        return f()
+      } catch (e) {
+        if (error) {
+          return error(e)
+        }
+        throw e
+      }
+    }
+  }
   
+  fiber = new Fiber(fiberFunction)
+
+  // maintain a handle for this fiber so it doesn't get garbage collected
+  fiber.__spawnId = spawn._getFiberId()
+  spawn._fibers[fiber.__spawnId] = fiber
+  ++spawn._fibers._length
+
   // otherwise, run async on nextTick 
   process.nextTick(function() {
     try {
@@ -276,8 +328,14 @@ function spawn(f, next, error) {
       // to `debug` in case
       debug('exception caught with error undefined in fibers.spawn: ' +
             inspect(e))
+    } finally {
+      if (detach) {
+        blockFunction.__runCalled.return()
+      }
     }
   })
+
+  return detach ? blockFunction : undefined
 }
 // Number.MAX_SAFE_INTEGER == 9007199254740991
 // this would roll over in 104249 days at 10**6 spawns/sec

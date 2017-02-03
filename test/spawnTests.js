@@ -61,10 +61,7 @@ module.exports = o({
           return 1
         })
         assert.equal(result, 1)
-        assert.equal(FiberSpy.callCount, 1)
-        var fiberSpy = FiberSpy.returnValues[0]
-        assert.equal(fiberSpy.run.callCount, 1)
-        assert.equal(FiberSpy.yield.callCount, 0)
+        assert.equal(FiberSpy.callCount, 0)
       }
     }),
     o({
@@ -77,10 +74,7 @@ module.exports = o({
             throw new Error(self.name)
           })
         }, Error)
-        assert.equal(FiberSpy.callCount, 1)
-        var fiberSpy = FiberSpy.returnValues[0]
-        assert.equal(fiberSpy.run.callCount, 1)
-        assert.equal(FiberSpy.yield.callCount, 0)
+        assert.equal(FiberSpy.callCount, 0)
       }
     }),
     o({
@@ -94,10 +88,7 @@ module.exports = o({
           error = err
         })
         assert.equal(result, 1)
-        assert.equal(FiberSpy.callCount, 1)
-        var fiberSpy = FiberSpy.returnValues[0]
-        assert.equal(fiberSpy.run.callCount, 1)
-        assert.equal(FiberSpy.yield.callCount, 0)
+        assert.equal(typeof error, 'undefined')
       }
     }),
     o({
@@ -111,10 +102,7 @@ module.exports = o({
           try {
             assert(err instanceof Error)
             assert.equal(err.message, self.name)
-            assert.equal(FiberSpy.callCount, 1)
-            var fiberSpy = FiberSpy.returnValues[0]
-            assert.equal(fiberSpy.run.callCount, 1)
-            assert(!FiberSpy.yield.called)
+            assert.equal(FiberSpy.callCount, 0)
           } finally {
             setImmediate(done)
           }
@@ -245,6 +233,6 @@ module.exports = o({
           done()
         })
       }
-    })
+    }),
   ]
 })
