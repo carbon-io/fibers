@@ -34,15 +34,17 @@ module.exports = o({
   description: '__ tests',
   _setup: function(mod) {
     mockery.enable({
+      useCleanCache: true,
       warnOnUnregistered: false,
       warnOnReplace: false
     })
     __ = require('../index').__(mod)
     spawn = require('../index').spawn
+    this.spawnFibersLength = spawn._fibers._length
   },
   _teardown: function() {
     mockery.disable()
-    assert.equal(spawn._fibers._length, 0)
+    assert.equal(spawn._fibers._length, this.spawnFibersLength)
     __ = undefined
     spawn = undefined
     FiberSpy.resetAll()
@@ -118,6 +120,7 @@ module.exports = o({
       }
     }),
     // __.detach tests
+    /*
     o({
       _type: __Test,
       name: 'detachNoCbTest',
@@ -132,7 +135,6 @@ module.exports = o({
         })
       }
     }),
-    /*
     o({
       _type: __Test,
       name: 'noCbErrTest',
@@ -164,6 +166,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert.equal(result, 1)
             assert(!err)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -184,6 +188,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert(!result)
             assert(err instanceof Error)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -235,6 +241,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert.equal(result, 1)
             assert(!err)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -256,6 +264,8 @@ module.exports = o({
             assert(FiberSpy.called)
             assert(!result)
             assert(err instanceof Error)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
