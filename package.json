@@ -1,6 +1,6 @@
 {
   "name": "@carbon-io/fibers",
-  "version": "0.4.4",
+  "version": "0.4.6",
   "description": "Fibers",
   "keywords": ["fibers", "carbon-io"],
   "contributors": [
@@ -15,9 +15,9 @@
   "main": "index.js",
   "engines": { "node": ">= 4.0.0" },
   "devDependencies": {
-      "@carbon-io/test-tube": "0.2.x",
-      "@carbon-io/atom": "0.3.x",
-      "@carbon-io/bond": "0.2.x",
+      "@carbon-io/test-tube": "0.3.x",
+      "@carbon-io/atom": "0.4.x",
+      "@carbon-io/bond": "0.3.x",
       "sinon": "1.17.x",
       "mockery": "2.0.x"
   },

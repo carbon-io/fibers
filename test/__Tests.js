@@ -39,10 +39,11 @@ module.exports = o({
     })
     __ = require('../index').__(mod)
     spawn = require('../index').spawn
+    this.spawnFibersLength = spawn._fibers._length
   },
   _teardown: function() {
     mockery.disable()
-    assert.equal(spawn._fibers._length, 0)
+    assert.equal(spawn._fibers._length, this.spawnFibersLength)
     __ = undefined
     spawn = undefined
     FiberSpy.resetAll()
