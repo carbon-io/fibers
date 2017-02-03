@@ -39,6 +39,7 @@ module.exports = o({
   description: 'spawn tests',
   _setup: function(mod) {
     mockery.enable({
+      cleanCache: true,
       warnOnUnregistered: false,
       warnOnReplace: false
     })
@@ -116,6 +117,8 @@ module.exports = o({
             var fiberSpy = FiberSpy.returnValues[0]
             assert.equal(fiberSpy.run.callCount, 1)
             assert(!FiberSpy.yield.called)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -136,6 +139,8 @@ module.exports = o({
             var fiberSpy = FiberSpy.returnValues[0]
             assert.equal(fiberSpy.run.callCount, 1)
             assert.equal(FiberSpy.yield.callCount, 0)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             setImmediate(done)
           }
@@ -164,6 +169,8 @@ module.exports = o({
             assert.equal(fiberSpy.run.callCount, 1)
             assert(!FiberSpy.yield.called)
             assert.equal(debugSpy.spy.callCount, 2)
+          } catch (e) {
+            done = done.bind(undefined, e)
           } finally {
             done()
           }
@@ -175,6 +182,7 @@ module.exports = o({
       name: 'nextAndErrorCallback',
       doTest: function(done) {
         var result = undefined
+        var error = undefined
         var errorSpy = sinon.spy()
         spawn(function() {
             return 1
@@ -185,18 +193,28 @@ module.exports = o({
               var fiberSpy = FiberSpy.returnValues[0]
               assert.equal(fiberSpy.run.callCount, 1)
               assert.equal(FiberSpy.yield.callCount, 0)
+            } catch (e) {
+              error = e
             } finally {
               setImmediate(function() {
-                assert(!errorSpy.called)
-                done()
+                try {
+                  assert(!errorSpy.called)
+                } catch (e) {
+                  error = e
+                }
+                done(error)
               })
             }
           }, 
           errorSpy
         )
-        // run on nextTick
-        var fiberSpy = FiberSpy.returnValues[0]
-        assert.equal(fiberSpy.run.callCount, 0)
+        try {
+          // run on nextTick
+          var fiberSpy = FiberSpy.returnValues[0]
+          assert.equal(fiberSpy.run.callCount, 0)
+        } catch (e) {
+          error = e
+        }
       }
     }),
     o({
@@ -204,6 +222,7 @@ module.exports = o({
       name: 'nextAndErrorCallbackException',
       doTest: function(done) {
         var self = this
+        var error = undefined
         var nextSpy = sinon.spy()
         assert.doesNotThrow(function() {
           spawn(function() {
@@ -211,15 +230,24 @@ module.exports = o({
             }, 
             nextSpy,
             function(err) {
-              assert.equal(FiberSpy.callCount, 1)
-              var fiberSpy = FiberSpy.returnValues[0]
-              assert.equal(fiberSpy.run.callCount, 1)
-              assert(!FiberSpy.yield.called)
-              assert.equal(debugSpy.spy.callCount, 1)
-              setImmediate(function() {
-                assert(!nextSpy.called)
-                done()
-              })
+              try {
+                assert.equal(FiberSpy.callCount, 1)
+                var fiberSpy = FiberSpy.returnValues[0]
+                assert.equal(fiberSpy.run.callCount, 1)
+                assert(!FiberSpy.yield.called)
+                assert.equal(debugSpy.spy.callCount, 1)
+              } catch (e) {
+                error = e
+              } finally {
+                setImmediate(function() {
+                  try {
+                    assert(!nextSpy.called)
+                  } catch (e) {
+                    error = e
+                  }
+                  done(error)
+                })
+              }
             }
           )
         }, Error)
@@ -230,6 +258,7 @@ module.exports = o({
       name: 'syncCallWithNestedAsyncCallUsingFutures',
       doTest: function(done) {
         var self = this
+        var error = undefined
         var val = spawn(
           function() {
             var asyncFunc = function(cb) {
@@ -239,11 +268,15 @@ module.exports = o({
             }
             return asyncFunc.sync.call(this)
           })
-        assert.equal(val, 1)
+        try {
+          assert.equal(val, 1)
+        } catch (e) {
+          error = e
+        }
         process.nextTick(function() {
           // this lets the spawned fiber run out so the spawn.fibers test in 
           // parent._teardown succeeds
-          done()
+          done(error)
         })
       }
     })
