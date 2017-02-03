@@ -120,60 +120,93 @@ module.exports = o({
       }
     }),
     // __.detach tests
-    /*
     o({
       _type: __Test,
       name: 'detachNoCbTest',
       doTest: function(done) {
-        var x = __.detach(function() {
+        var error = undefined
+        var wait = __.detach(function() {
           return 1
         })
-        assert(FiberSpy.called)
-        assert.equal(x(), 1)
+        try {
+          assert(FiberSpy.called)
+          assert.equal(wait(), 1)
+        } catch (e) {
+          error = e
+        }
         setImmediate(function() {
-          done()
+          done(error)
         })
       }
     }),
     o({
       _type: __Test,
-      name: 'noCbErrTest',
-      doTest: function() {
+      name: 'detachNoCbErrTest',
+      doTest: function(done) {
         var self = this
+        var error = undefined
         var x = undefined
-        assert.throws(function() {
-          __(function() {
+        var wait = undefined
+        assert.doesNotThrow(function() {
+          wait = __.detach(function() {
             x = 1
             throw new Error(self.name)
           })
         }, Error)
-        assert(!FiberSpy.called)
-        assert.equal(x, 1)
+        setImmediate(function() {
+          try {
+            assert(FiberSpy.called)
+            assert.throws(function() {
+              wait()
+            }, new RegExp(self.name))
+            assert.equal(x, 1)
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
       }
     }),
     o({
       _type: __Test,
-      name: 'cbTest',
-      teardown: function() {
-      },
+      name: 'detachCbTest',
       doTest: function(done) {
+        // NOTE: we dispatch the result to two places here...
+        var self = this
+        var error = undefined
         var x = 0
-        var exp = undefined
-        __(function() {
+        var wait = __.detach(function() {
           return x + 1
         }, function(err, result) {
+          if (err) {
+            error = err
+            return
+          }
           try {
             assert(FiberSpy.called)
             assert.equal(result, 1)
             assert(!err)
           } catch (e) {
-            done = done.bind(undefined, e)
+            error = e
+          }
+        })
+        setImmediate(function() {
+          var result = undefined
+          try {
+            assert.doesNotThrow(function() {
+              result = wait()
+            }, Error)
+            assert.equal(result, 1)
+          } catch (e) {
+            error = e
           } finally {
-            setImmediate(done)
+            done(error)
           }
         })
       }
     }),
+    /*
     o({
       _type: __Test,
       name: 'cbErrTest',
