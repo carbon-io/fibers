@@ -4,7 +4,7 @@ var debug = require('debug')('@carbon-io/fibers')
 
 var fibrous = require('@carbon-io/fibrous')
 var Fiber = require('fibers')
-// NOTE: we need to grab Future from fibrous since fibrous definies future on
+// NOTE: we need to grab Future from fibrous since fibrous defines future on
 //       Function.prototype as an accessor descriptor and Future does not guard
 //       against resetting this property on Function.prototype.
 var Future = fibrous.Future
@@ -45,24 +45,26 @@ function __(mod) {
     try {
       ret = f()
       if (cb) {
-        return cb(null, ret)
+        cb(null, ret)
       }
       if (detach) {
         return function() {
           return ret
         }
+      } else if (!cb) {
+        return ret
       }
-      return ret
     } catch (e) {
       if (cb) {
-        return cb(e)
+        cb(e)
       }
       if (detach) {
         return function() {
           throw e
         }
+      } else if (!cb) {
+        throw e
       }
-      throw e
     }
   }
   result.main.detach = function(f, cb) {
@@ -280,12 +282,9 @@ function spawn(f, next, error, detach) {
       return ret
     } else {
       // otherwise we didn't yield and there was an exception
-      if (!error) {
-        // if there was no error callback, then we need to throw it here
-        throw err
-      }
-      // otherwise, the error was thrown via the error callback
-      return
+      // XXX: do we want to throw here? previously, we did not if there was an
+      //      error callback
+      throw err
     }
   }
   blockFunction.__runCalled = new Future()
