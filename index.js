@@ -344,10 +344,6 @@ spawn._getFiberId = function() {
 spawn._fiberId = 0
 spawn._fibers = {_length: 0}
 
-function getTests() {
-  return [require('./test/__Tests'), require('./test/spawnTests')]
-}
-
 /****************************************************************************************************
  * module.exports
  */
@@ -357,6 +353,15 @@ module.exports = {
   setFiberPoolSize: setFiberPoolSize,
   getFibersCreated: getFibersCreated,
   syncInvoke: syncInvoke, // Backward compat
-  spawn: spawn, // Backward compat 
-  _Test: getTests
+  spawn: spawn // Backward compat 
 }
+
+Object.defineProperty(exports, '$Test', {
+  enumerable: false,
+  configurable: false,
+  writeable: false,
+  value: 'static',
+  get: function() {
+    return true//[require('./test/_Tests'), require('./test/spawnTests')]
+  }
+})
