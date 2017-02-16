@@ -63,10 +63,7 @@ module.exports = o({
           return 1
         })
         assert.equal(result, 1)
-        assert.equal(FiberSpy.callCount, 1)
-        var fiberSpy = FiberSpy.returnValues[0]
-        assert.equal(fiberSpy.run.callCount, 1)
-        assert.equal(FiberSpy.yield.callCount, 0)
+        assert.equal(FiberSpy.callCount, 0)
       }
     }),
     o({
@@ -79,10 +76,7 @@ module.exports = o({
             throw new Error(self.name)
           })
         }, Error)
-        assert.equal(FiberSpy.callCount, 1)
-        var fiberSpy = FiberSpy.returnValues[0]
-        assert.equal(fiberSpy.run.callCount, 1)
-        assert.equal(FiberSpy.yield.callCount, 0)
+        assert.equal(FiberSpy.callCount, 0)
       }
     }),
     o({
@@ -96,10 +90,7 @@ module.exports = o({
           error = err
         })
         assert.equal(result, 1)
-        assert.equal(FiberSpy.callCount, 1)
-        var fiberSpy = FiberSpy.returnValues[0]
-        assert.equal(fiberSpy.run.callCount, 1)
-        assert.equal(FiberSpy.yield.callCount, 0)
+        assert.equal(typeof error, 'undefined')
       }
     }),
     o({
@@ -113,12 +104,7 @@ module.exports = o({
           try {
             assert(err instanceof Error)
             assert.equal(err.message, self.name)
-            assert.equal(FiberSpy.callCount, 1)
-            var fiberSpy = FiberSpy.returnValues[0]
-            assert.equal(fiberSpy.run.callCount, 1)
-            assert(!FiberSpy.yield.called)
-          } catch (e) {
-            done = done.bind(undefined, e)
+            assert.equal(FiberSpy.callCount, 0)
           } finally {
             setImmediate(done)
           }
@@ -279,6 +265,330 @@ module.exports = o({
           done(error)
         })
       }
-    })
+    }),
+    // spawn tests with detach
+    o({
+      _type: SpawnTest,
+      name: 'noCallbacksDetach',
+      doTest: function(done) {
+        var self = this
+        var error = null
+        var wait = spawn(function(done) {
+          return 1
+        }, undefined, undefined, true)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert(!FiberSpy.returnValues[0].run.called)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert.equal(wait(), 1)
+            assert.equal(FiberSpy.callCount, 1)
+            assert(FiberSpy.returnValues[0].run.called)
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'noCallbacksExceptionDetach',
+      doTest: function(done) {
+        var self = this
+        var error = null
+        var wait = undefined
+        assert.doesNotThrow(function() {
+          wait = spawn(function() {
+            throw new Error(self.name)
+          }, undefined, undefined, true)
+        }, Error)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert(!FiberSpy.returnValues[0].run.called)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert.throws(function() {
+              wait()
+            }, new RegExp(self.name))
+            assert.equal(FiberSpy.callCount, 1)
+            assert(FiberSpy.returnValues[0].run.called)
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'errorCallbackDetach',
+      doTest: function(done) {
+        var error = undefined
+        var wait = spawn(function() {
+          return 1
+        }, undefined, function(err) {
+          error = err
+        }, true)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert(!FiberSpy.returnValues[0].run.called)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert(FiberSpy.returnValues[0].run.called)
+            assert.equal(wait(), 1)
+            assert.equal(typeof error, 'undefined')
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'errorCallbackExceptionDetach',
+      doTest: function(done) {
+        var self = this
+        var error = undefined
+        var _error = undefined
+        var wait = spawn(function() {
+          throw new Error(self.name)
+        }, undefined, function(err) {
+          _error = err
+        }, true)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert(!FiberSpy.returnValues[0].run.called)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert(_error instanceof Error)
+            assert.equal(_error.message, self.name)
+            assert(FiberSpy.returnValues[0].run.called)
+            assert.throws(function() {
+              wait()
+            }, new RegExp(self.name))
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'nextCallbackDetach',
+      doTest: function(done) {
+        var self = this
+        var result = undefined
+        var error = undefined
+        var wait = spawn(function() {
+          return 1
+        }, function(result) {
+          try {
+            assert.equal(result, 1)
+            assert.equal(FiberSpy.callCount, 1)
+            assert.equal(FiberSpy.returnValues[0].run.callCount, 1)
+            assert.equal(FiberSpy.yield.callCount, 0)
+          } catch (e) {
+            error = e
+          }
+        }, undefined, true)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert(!FiberSpy.returnValues[0].run.callCount, 0)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert.equal(FiberSpy.returnValues[0].run.callCount, 1)
+            assert.doesNotThrow(function() {
+              result = wait()
+            }, Error)
+            assert.equal(result, 1)
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'nextCallbackExceptionDetach',
+      doTest: function(done) {
+        var self = this
+        var error = undefined
+        var wait = undefined
+        var nextSpy = sinon.spy()
+        assert.doesNotThrow(function() {
+          wait = spawn(function() {
+            throw new Error(self.name)
+          }, nextSpy, undefined, true)
+        }, Error)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert(!FiberSpy.returnValues[0].run.callCount, 0)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          // should run after nextTick
+          try {
+            assert.equal(FiberSpy.callCount, 1)
+            assert.equal(FiberSpy.returnValues[0].run.callCount, 1)
+            assert(!FiberSpy.yield.called)
+            assert.equal(debugSpy.spy.callCount, 2)
+            assert.throws(function() {
+              wait()
+            }, new RegExp(self.name))
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'nextAndErrorCallbackDetach',
+      doTest: function(done) {
+        var self = this
+        var result = undefined
+        var error = undefined
+        var errorSpy = sinon.spy()
+        var wait = spawn(function() {
+            return 1
+          }, function(result) {
+            try {
+              assert.equal(result, 1)
+              assert.equal(FiberSpy.callCount, 1)
+              var fiberSpy = FiberSpy.returnValues[0]
+              assert.equal(fiberSpy.run.callCount, 1)
+              assert.equal(FiberSpy.yield.callCount, 0)
+            } catch (e) {
+              error = e
+            } finally {
+            }
+          }, 
+          errorSpy, 
+          true
+        )
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert.equal(FiberSpy.returnValues[0].run.callCount, 0)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert.equal(FiberSpy.returnValues[0].run.callCount, 1)
+            assert(!errorSpy.called)
+            assert.equal(wait(), 1)
+          } catch (e) {
+            error = e
+          }
+          done(error)
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'nextAndErrorCallbackExceptionDetach',
+      doTest: function(done) {
+        var self = this
+        var error = undefined
+        var wait = undefined
+        var nextSpy = sinon.spy()
+        assert.doesNotThrow(function() {
+          wait = spawn(function() {
+              throw new Error(self.name)
+            }, 
+            nextSpy,
+            function(err) {
+              try {
+                assert.equal(FiberSpy.callCount, 1)
+                assert.equal(FiberSpy.returnValues[0].run.callCount, 1)
+                assert(!FiberSpy.yield.called)
+                assert.equal(debugSpy.spy.callCount, 1)
+              } catch (e) {
+                error = e
+              } 
+            },
+            true
+          )
+        }, Error)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert.equal(FiberSpy.returnValues[0].run.callCount, 0)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert.equal(FiberSpy.returnValues[0].run.callCount, 1)
+            assert(!nextSpy.called)
+            assert.throws(function() {
+              wait()
+            }, new RegExp(self.name))
+          } catch (e) {
+            error = e
+          }
+          done(error)
+        })
+      }
+    }),
+    o({
+      _type: SpawnTest,
+      name: 'syncCallWithNestedAsyncCallUsingFuturesDetach',
+      doTest: function(done) {
+        var self = this
+        var error = undefined
+        var wait = spawn(
+          function() {
+            var asyncFunc = function(cb) {
+              process.nextTick(function() {
+                cb(null, 1)
+              })
+            }
+            return asyncFunc.sync.call(this)
+          }, undefined, undefined, true)
+        try {
+          assert.equal(FiberSpy.callCount, 1)
+          assert.equal(FiberSpy.returnValues[0].run.callCount, 0)
+        } catch (e) {
+          error = e
+        }
+        setImmediate(function() {
+          try {
+            assert.equal(FiberSpy.returnValues[0].run.callCount, 2)
+            assert.equal(wait(), 1)
+          } catch (e) {
+            error = e
+          } finally {
+            done(error)
+          }
+        })
+      }
+    }),
   ]
 })
