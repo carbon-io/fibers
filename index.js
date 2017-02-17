@@ -357,11 +357,11 @@ module.exports = {
   spawn: spawn // Backward compat 
 }
 
-Object.defineProperty(exports, '$Test', {
+Object.defineProperty(module.exports, '$Test', {
   enumerable: false,
   configurable: false,
   writeable: false,
   get: function() {
-    return [require('./test/_Tests'), require('./test/spawnTests')]
+    return [require('./test/__Tests'), require('./test/spawnTests')]
   }
 })
