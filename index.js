@@ -344,6 +344,7 @@ spawn._getFiberId = function() {
 spawn._fiberId = 0
 spawn._fibers = {_length: 0}
 
+
 /****************************************************************************************************
  * module.exports
  */
@@ -360,8 +361,7 @@ Object.defineProperty(exports, '$Test', {
   enumerable: false,
   configurable: false,
   writeable: false,
-  value: 'static',
   get: function() {
-    return true//[require('./test/_Tests'), require('./test/spawnTests')]
+    return [require('./test/_Tests'), require('./test/spawnTests')]
   }
 })
