@@ -96,7 +96,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'errorCallbackException',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var result = spawn(function() {
           throw new Error(self.name)
@@ -114,7 +114,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextCallback',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var result = undefined
         spawn(function() {
           return 1
@@ -139,7 +139,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextCallbackException',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var nextSpy = sinon.spy()
         assert.doesNotThrow(function() {
@@ -166,7 +166,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextAndErrorCallback',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var result = undefined
         var error = undefined
         var errorSpy = sinon.spy()
@@ -206,7 +206,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextAndErrorCallbackException',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var nextSpy = sinon.spy()
@@ -242,7 +242,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'syncCallWithNestedAsyncCallUsingFutures',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var val = spawn(
@@ -270,7 +270,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'noCallbacksDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = null
         var wait = spawn(function(done) {
@@ -298,7 +298,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'noCallbacksExceptionDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = null
         var wait = undefined
@@ -331,7 +331,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'errorCallbackDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var error = undefined
         var wait = spawn(function() {
           return 1
@@ -360,7 +360,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'errorCallbackExceptionDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var _error = undefined
@@ -394,7 +394,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextCallbackDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var result = undefined
         var error = undefined
@@ -434,7 +434,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextCallbackExceptionDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var wait = undefined
@@ -471,7 +471,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextAndErrorCallbackDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var result = undefined
         var error = undefined
@@ -514,7 +514,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextAndErrorCallbackExceptionDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var wait = undefined
@@ -560,7 +560,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'syncCallWithNestedAsyncCallUsingFuturesDetach',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var wait = spawn(

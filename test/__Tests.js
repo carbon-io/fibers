@@ -83,7 +83,7 @@ module.exports = o({
       name: 'cbTest',
       teardown: function() {
       },
-      doTest: function(done) {
+      doTest: function(context, done) {
         var x = 0
         var exp = undefined
         __(function() {
@@ -102,7 +102,7 @@ module.exports = o({
     o({
       _type: __Test,
       name: 'cbErrTest',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var x = 0
         var exp = undefined
@@ -123,7 +123,7 @@ module.exports = o({
     o({
       _type: __Test,
       name: 'detachNoCbTest',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var error = undefined
         var wait = __.detach(function() {
           return 1
@@ -142,7 +142,7 @@ module.exports = o({
     o({
       _type: __Test,
       name: 'detachNoCbErrTest',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var x = undefined
@@ -171,7 +171,7 @@ module.exports = o({
     o({
       _type: __Test,
       name: 'detachCbTest',
-      doTest: function(done) {
+      doTest: function(context, done) {
         // NOTE: we dispatch the result to two places here...
         var self = this
         var error = undefined
@@ -209,7 +209,7 @@ module.exports = o({
     o({
       _type: __Test,
       name: 'detachCbErrTest',
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var x = 0
         var error = undefined
@@ -270,7 +270,7 @@ module.exports = o({
       _type: __Test,
       name: 'mainMainCbTest',
       mod: require.main,
-      doTest: function(done) {
+      doTest: function(context, done) {
         var x = 0
         var exp = undefined
         __.main(function() {
@@ -292,7 +292,7 @@ module.exports = o({
       _type: __Test,
       name: 'mainMainCbErrTest',
       mod: require.main,
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var x = 0
         var exp = undefined
@@ -316,7 +316,7 @@ module.exports = o({
       _type: __Test,
       name: 'mainDetachNoCbTest',
       mod: require.main,
-      doTest: function(done) {
+      doTest: function(context, done) {
         var error = undefined
         var wait = __.main.detach(function() {
           return 1
@@ -336,7 +336,7 @@ module.exports = o({
       _type: __Test,
       name: 'mainDetachNoCbErrTest',
       mod: require.main,
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var error = undefined
         var x = undefined
@@ -366,7 +366,7 @@ module.exports = o({
       _type: __Test,
       name: 'mainDetachCbTest',
       mod: require.main,
-      doTest: function(done) {
+      doTest: function(context, done) {
         // NOTE: we dispatch the result to two places here...
         var self = this
         var error = undefined
@@ -405,7 +405,7 @@ module.exports = o({
       _type: __Test,
       name: 'mainDetachCbErrTest',
       mod: require.main,
-      doTest: function(done) {
+      doTest: function(context, done) {
         var self = this
         var x = 0
         var error = undefined
