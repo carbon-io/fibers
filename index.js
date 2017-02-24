@@ -362,6 +362,6 @@ Object.defineProperty(module.exports, '$Test', {
   configurable: false,
   writeable: false,
   get: function() {
-    return [require('./test/__Tests'), require('./test/spawnTests')]
+    return require('./test/index.js')
   }
 })
