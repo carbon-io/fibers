@@ -209,6 +209,8 @@ function spawn(f, next, error, detach) {
   var err = undefined
   // whether or not f yielded
   var yielded = false
+  // signal that we are falling back to detach mode when spawning root fiber
+  var detachFallback = false
   // wrapper function for f to be run in a new fiber
   var fiberFunction = function() {
     try {
@@ -297,7 +299,7 @@ function spawn(f, next, error, detach) {
     if (typeof Fiber.current === 'undefined') {
       debug('trying to invoke spawn synchronously outside of a fiber, falling ' +
             'back to async')
-      detach = true
+      detachFallback = true
     } else {
       try {
         return f()
@@ -322,10 +324,13 @@ function spawn(f, next, error, detach) {
     try {
       fiber.run()
     } catch (e) {
+      if (detachFallback) {
+        throw e
+      }
       // we will only get here if next is defined, but error is not
       // assume that the caller doesn't care if there is an error, but log
       // to `debug` in case
-      debug('exception caught with error undefined in fibers.spawn: ' +
+      debug('Exception caught with error undefined in fibers.spawn: ' +
             inspect(e))
     } finally {
       if (detach) {
