@@ -10,6 +10,7 @@ var _o = require('@carbon-io/bond')._o(module)
 var testtube = require('@carbon-io/test-tube')
 
 var spawn = undefined
+var _spawnBookkeeping = undefined
 
 var FiberSpy = require('./util').FiberSpy
 var debugSpy = function(namespace) {
@@ -44,11 +45,13 @@ module.exports = o({
       warnOnReplace: false
     })
     spawn = require('../index').spawn
-    this.spawnFibersLength = spawn._fibers._length
+    this._spawnBookkeeping = require('../index')._spawnBookkeeping
+    this.spawnFibersLength = this._spawnBookkeeping._fibers._length
   },
   _teardown: function() {
     mockery.disable()
-    assert.equal(spawn._fibers._length, this.spawnFibersLength)
+    debugger
+    assert.equal(this._spawnBookkeeping._fibers._length, this.spawnFibersLength)
     spawn = undefined
     FiberSpy.resetAll()
     debugSpy.spy.reset()

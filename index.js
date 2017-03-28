@@ -13,9 +13,8 @@ var Future = fibrous.Future
  * __
  */
 function __(mod) {
-  var detach = false
-  // XXX: can we substitute undefined for null when calling cb
-  var result = function(f, cb) {
+  var result = function(f, cb, detach) {
+    detach = typeof detach === 'undefined' ? false : detach
     if (cb) {
       // if we've got a callback, then run async
       return spawn(f, 
@@ -31,13 +30,13 @@ function __(mod) {
     return spawn(f, undefined, undefined, detach)
   }
   result.detach = function(f, cb) {
-    detach = true
-    return result(f, cb)
+    debugger
+    return result(f, cb, true)
   }
-  result.main = function(f, cb) {
+  result.main = function(f, cb, detach) {
     if (require.main === mod) {
       // DRY
-      return result(f, cb)
+      return result(f, cb, detach)
     }
     // otherwise we just run the function synchronously and pass the result back
     // via the callback if one is supplied or as the return value of this function
@@ -68,8 +67,7 @@ function __(mod) {
     }
   }
   result.main.detach = function(f, cb) {
-    detach = true
-    return result.main(f, cb)
+    return result.main(f, cb, true)
   }
   return result
 }
@@ -183,6 +181,17 @@ function getFibersCreated() {
   return Fiber.fibersCreated
 }
 
+// Number.MAX_SAFE_INTEGER == 9007199254740991
+// this would roll over in 104249 days at 10**6 spawns/sec
+
+var _spawnBookkeeping = {
+  _fiberId: 0,
+  _fibers: {_length: 0},
+  _getFiberId: function() {
+    return this._fiberId++
+  }
+}
+
 /****************************************************************************************************
  * spawn
  *
@@ -212,7 +221,7 @@ function spawn(f, next, error, detach) {
   // signal that we are falling back to detach mode when spawning root fiber
   var detachFallback = false
   // wrapper function for f to be run in a new fiber
-  var fiberFunction = function() {
+  var fiberFunction = function(fiberId) {
     try {
       // execute f
       // note: this may yield internally
@@ -259,18 +268,22 @@ function spawn(f, next, error, detach) {
       }
     } finally {
       // clean up 
-      var fiber_ = spawn._fibers[fiber.__spawnId]
+      var fiber_ = _spawnBookkeeping._fibers[fiberId]
       if (typeof fiber_ === 'undefined') {
         throw new Error('Failed to find current fiber in spawn.fibers')
       }
       // remove our handle on this fiber so that it will get garbage collected
-      delete spawn._fibers[fiber.__spawnId]
-      --spawn._fibers._length
+      delete _spawnBookkeeping._fibers[fiberId]
+      --_spawnBookkeeping._fibers._length
     }
   }
+  
+  var runCalled = new Future()
+
   // function used to block and wait for a result
+  // var blockFunction = function(runCalled, returned, ret, err, yielded, future) {
   var blockFunction = function() {
-    blockFunction.__runCalled.wait()
+    runCalled.wait()
     if (returned) {
       // if returned is true, then f executed without yielding, so return the result
       return ret
@@ -289,7 +302,7 @@ function spawn(f, next, error, detach) {
       throw err
     }
   }
-  blockFunction.__runCalled = new Future()
+  // }.bind(undefined, runCalled, returned, ret, err, yielded, future)
 
   detach = detach ? true : false
 
@@ -312,15 +325,16 @@ function spawn(f, next, error, detach) {
     }
   }
   
-  fiber = new Fiber(fiberFunction)
+  var fiberId = _spawnBookkeeping._getFiberId()
+
+  fiber = new Fiber(fiberFunction.bind(undefined, fiberId))
 
   // maintain a handle for this fiber so it doesn't get garbage collected
-  fiber.__spawnId = spawn._getFiberId()
-  spawn._fibers[fiber.__spawnId] = fiber
-  ++spawn._fibers._length
+  _spawnBookkeeping._fibers[fiberId] = fiber
+  ++_spawnBookkeeping._fibers._length
 
   // otherwise, run async on nextTick 
-  process.nextTick(function() {
+  process.nextTick(function(fiber, detachFallback, detach) {
     try {
       fiber.run()
     } catch (e) {
@@ -334,20 +348,13 @@ function spawn(f, next, error, detach) {
             inspect(e))
     } finally {
       if (detach) {
-        blockFunction.__runCalled.return()
+        runCalled.return()
       }
     }
-  })
+  }.bind(undefined, fiber, detachFallback, detach))
 
   return detach ? blockFunction : undefined
 }
-// Number.MAX_SAFE_INTEGER == 9007199254740991
-// this would roll over in 104249 days at 10**6 spawns/sec
-spawn._getFiberId = function() {
-  return spawn._fiberId++
-}
-spawn._fiberId = 0
-spawn._fibers = {_length: 0}
 
 /****************************************************************************************************
  * module.exports
@@ -358,7 +365,8 @@ module.exports = {
   setFiberPoolSize: setFiberPoolSize,
   getFibersCreated: getFibersCreated,
   syncInvoke: syncInvoke, // Backward compat
-  spawn: spawn // Backward compat  
+  spawn: spawn, // Backward compat
+  _spawnBookkeeping: _spawnBookkeeping // expose spawn bookkeeping for tests
 }
 
 Object.defineProperty(module.exports, '$Test', {
