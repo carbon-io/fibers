@@ -1,5 +1,6 @@
 var assert = require('assert')
 
+var debug = require('debug')
 var mockery = require('mockery')
 var sinon = require('sinon')
 
@@ -8,14 +9,21 @@ var oo = require('@carbon-io/atom').oo(module)
 var _o = require('@carbon-io/bond')._o(module)
 var testtube = require('@carbon-io/test-tube')
 
-var spawn = undefined
 var __ = undefined
 var _spawnBookkeeping = undefined
 
 var FiberSpy = require('./util').FiberSpy
+var debugSpy = function(namespace) {
+  debugSpy.spy = sinon.spy(debug(namespace))
+  return debugSpy.spy
+}
 
 mockery.registerMock('fibers', FiberSpy)
+mockery.registerMock('debug', debugSpy)
 
+/******************************************************************************
+ *
+ */
 var __Test = oo({
   _type: testtube.Test,
   _C: function() {
@@ -29,10 +37,17 @@ var __Test = oo({
   }
 })
 
+/******************************************************************************
+ *
+ */
 module.exports = o({
   _type: testtube.Test,
   name: '__Tests',
   description: '__ tests',
+
+  /****************************************************************************
+   *
+   */
   _setup: function(mod) {
     mockery.enable({
       useCleanCache: true,
@@ -40,87 +55,110 @@ module.exports = o({
       warnOnReplace: false
     })
     __ = require('../index').__(mod)
-    spawn = require('../index').spawn
     this._spawnBookkeeping = require('../index')._spawnBookkeeping
     this.spawnFibersLength = this._spawnBookkeeping._fibers._length
   },
+
+  /****************************************************************************
+   *
+   */
   _teardown: function() {
     mockery.disable()
     assert.equal(this._spawnBookkeeping._fibers._length, this.spawnFibersLength)
     __ = undefined
-    spawn = undefined
     FiberSpy.resetAll()
+    debugSpy.spy.reset()
   },
+
+  /****************************************************************************
+   *
+   */
   tests: [
-    // __ tests
+
+    /**************************************************************************
+     *
+     */
     o({
       _type: __Test,
       name: 'noCbTest',
       doTest: function() {
-        var x = __(function() {
-          return 1
+        var spy = sinon.spy()
+        __(function() {
+          spy(1)
         })
         assert(!FiberSpy.called)
-        assert.equal(x, 1)
+        assert.equal(spy.firstCall.args[0], 1)
       }
     }),
+
+    /**************************************************************************
+     *
+     */
     o({
       _type: __Test,
       name: 'noCbErrTest',
       doTest: function() {
         var self = this
-        var x = undefined
+        var spy = sinon.spy()
         assert.throws(function() {
           __(function() {
-            x = 1
+            spy(1)
             throw new Error(self.name)
           })
         }, Error)
         assert(!FiberSpy.called)
-        assert.equal(x, 1)
+        assert(debugSpy.spy.firstCall.args[0].includes(this.name))
+        assert.equal(spy.firstCall.args[0], 1)
       }
     }),
+
+    /**************************************************************************
+     *
+     */
     o({
       _type: __Test,
       name: 'cbTest',
-      teardown: function() {
-      },
-      doTest: function(context, done) {
-        var x = 0
-        var exp = undefined
+      doTest: function() {
+        var error = undefined
+        var result = undefined
         __(function() {
-          return x + 1
-        }, function(err, result) {
-          try {
-            assert(FiberSpy.called)
-            assert.equal(result, 1)
-            assert(!err)
-          } finally {
-            setImmediate(done)
-          }
+          return 1
+        }, function(e, r) {
+          error = e
+          result = r
         })
+        assert(!FiberSpy.called)
+        assert.equal(result, 1)
+        assert(!error)
       }
     }),
+
+    /**************************************************************************
+     *
+     */
     o({
       _type: __Test,
       name: 'cbErrTest',
-      doTest: function(context, done) {
+      doTest: function() {
         var self = this
-        var x = 0
-        var exp = undefined
+        var error = undefined
+        var result = undefined
         __(function() {
           throw new Error(self.name)
-        }, function(err, result) {
-          try {
-            assert(FiberSpy.called)
-            assert(!result)
-            assert(err instanceof Error)
-          } finally {
-            setImmediate(done)
-          }
+        }, function(e, r) {
+          error = e
+          result = r
         })
+        assert(!FiberSpy.called)
+        assert.equal(typeof result, 'undefined')
+        assert(error instanceof Error)
+        assert(error.toString().includes(this.name))
       }
     }),
+    
+    /**************************************************************************
+     *
+     *
     // __.detach tests
     o({
       _type: __Test,
@@ -565,6 +603,7 @@ module.exports = o({
         }, new RegExp(this.name))
       }
     })
+    */
   ]
 })
 
