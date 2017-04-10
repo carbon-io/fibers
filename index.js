@@ -1,4 +1,5 @@
 var inspect = require('util').inspect
+var Module = require('module')
 
 var debug = require('debug')('@carbon-io/fibers')
 
@@ -9,96 +10,70 @@ var Fiber = require('fibers')
 //       against resetting this property on Function.prototype.
 var Future = fibrous.Future
 
-/*******************************************************************************
- * __
- */
-function __(mod) {
-  var result = function(f, cb, detach) {
-    detach = typeof detach === 'undefined' ? false : detach
+var __spawn = function(f, cb) {
+  if (cb) {
+    return spawn(f,
+                 function(result) {
+                   cb(null, result)
+                 },
+                 function(err) {
+                   cb(err)
+                 })
+  }
+  return spawn(f, undefined, undefined)
+}
+
+// ensure that f gets executed in a Fiber:
+var __ensure = function(f, cb) {
+  if (f instanceof Module) {
+    // handle require('fibers').__(mod)
+    return __ensure
+  }
+  if (typeof Fiber.current === 'undefined') {
+    return __spawn(f, cb)
+  }
+  var ret = undefined
+  try {
+    ret = f()
     if (cb) {
-      // if we've got a callback, then run async
-      return spawn(f, 
-                   function(result) {
-                     cb(null, result)
-                   },
-                   function(err) {
-                     cb(err)
-                   },
-                   detach)
+      cb(null, ret)
     }
-    // otherwise block
-    return spawn(f, undefined, undefined, detach)
-  }
-  result.detach = function(f, cb) {
-    debugger
-    return result(f, cb, true)
-  }
-  result.main = function(f, cb, detach) {
-    if (require.main === mod) {
-      // DRY
-      return result(f, cb, detach)
+  } catch (e) {
+    debug('Exception caught with cb undefined in __: ' +
+          inspect(e))
+    if (cb) {
+      cb(e)
+    } else {
+      throw e
     }
-    // otherwise we just run the function synchronously and pass the result back
-    // via the callback if one is supplied or as the return value of this function
-    var ret = undefined
-    try {
-      ret = f()
-      if (cb) {
-        cb(null, ret)
-      }
-      if (detach) {
-        return function() {
-          return ret
-        }
-      } else if (!cb) {
-        return ret
-      }
-    } catch (e) {
-      if (cb) {
-        cb(e)
-      }
-      if (detach) {
-        return function() {
-          throw e
-        }
-      } else if (!cb) {
-        throw e
-      }
-    }
-  }
-  result.main.detach = function(f, cb) {
-    return result.main(f, cb, true)
-  }
-  return result
-}
-
-/*******************************************************************************
- * __f
- */
-/*
-  function __f(f) {
-    return function() {
-      __(f)
-    }
-  }
-  
-OR
-
-function __f(f) {
-  __(f(arguments))
-}
-
-AND
-
-function f__(f) {
-  return function() { 
-    __(f(arguments)) 
   }
 }
 
-*/
+//  __(.main)?
+__ensure.main = function() {
+  console.warn('"__.main" is DEPRECATED and no longer necessary')
+  return __ensure.apply(undefined, arguments)
+}
 
-/****************************************************************************************************
+//  __(.ensure)*(.main)?
+__ensure.ensure = __ensure
+
+//  __(.(ensure|main))*
+__ensure.main.ensure = __ensure
+
+//  __(.(ensure|main))*(.spawn)?
+__ensure.spawn = __spawn
+
+//  __(.(ensure|main))*(.spawn(.main(.(ensure|main))*)?)?
+__ensure.spawn.main = __ensure.main
+
+//  __(.(ensure|main))*(.spawn(.(ensure|main))*)?
+__ensure.spawn.ensure = __ensure
+
+//  __(.(spawn|ensure|main))*
+__ensure.spawn.spawn = __spawn
+
+/******************************************************************************
  * syncInvoke
  *
  * Based on technique used by 0ctave and olegp:
@@ -109,9 +84,10 @@ function f__(f) {
  * @param {String} method - name of method
  * @param {Array} args
  *
- * @return {*} returns what the method would have returned via the supplied callback
-               callback accepted by invoked async method must be of form f(err, value)
- * @throws {Error} 
+ * @return {*} returns what the method would have returned via the supplied
+ *             callback accepted by invoked async method must be of form
+ *             f(err, value)
+ * @throws {Error}
  *
  * @ignore
  */
@@ -154,7 +130,7 @@ function syncInvoke(that, method, args) {
   return result
 }
 
-/****************************************************************************************************
+/******************************************************************************
  * getPoolSize
  *
  * @returns Fiber's current pool size
@@ -163,7 +139,7 @@ function getFiberPoolSize() {
   return Fiber.poolSize
 }
 
-/****************************************************************************************************
+/******************************************************************************
  * setPoolSize
  *
  * @param {Integer} poolSize - set Fiber's pool size to poolSize
@@ -172,7 +148,7 @@ function setFiberPoolSize(poolSize) {
   Fiber.poolSize = poolSize
 }
 
-/****************************************************************************************************
+/******************************************************************************
  * getFibersCreated
  *
  * @returns The number of fibers created
@@ -192,82 +168,37 @@ var _spawnBookkeeping = {
   }
 }
 
-/****************************************************************************************************
+/******************************************************************************
  * spawn
  *
  * @param {Function} f - function to spawn within a Fiber
  * @param {Function} next - optional callback
  * @param {Function} error - optional callback
- * @param {Function} detach - run f asynchronously and return a function to wait
- *                            on the result
  * @returns result - if `next` is not passed, the result of `f` will be returned
  * @throws {Exception} - if no error callback is passed, any exception will be
  *                       bubbled up if running synchronously, otherwise, errors
  *                       will be lost
  */
-function spawn(f, next, error, detach) {
-  // the new fiber
-  var fiber = undefined
-  // use to retrieve the return value if f yields
-  var future = new Future()
-  // the return value for f
-  var ret = undefined
-  // disambiguate "undefined" return value
-  var returned = false
-  // the error object thrown by f
-  var err = undefined
-  // whether or not f yielded
-  var yielded = false
-  // signal that we are falling back to detach mode when spawning root fiber
-  var detachFallback = false
-  // wrapper function for f to be run in a new fiber
+function spawn(f, next, error) {
   var fiberFunction = function(fiberId) {
+    var ret = undefined
     try {
-      // execute f
-      // note: this may yield internally
       ret = f()
-      returned = true
-      if (next) { 
-        // if a callback is supplied then pass then pass on the result and exit the fiber
-        next(ret)
-      }
-      if (!next || detach) {
-        // otherwise spawn is blocking
-        if (yielded) {
-          // if f yielded, unblock the spawn call
-          return future.return()
-        } else {
-          // otherwise, executed without yielding, then no need for the future
-          return 
-        }
-      }
       if (next) {
-        // return if next was defined and we didn't go the detach route
-        return
+        return next(ret)
+      } else {
+        // drop it
       }
     } catch (e) {
       debug(e.stack)
-      // save the error
-      err = e
-      if (error) { 
-        // if there's an error callback then throw it that way
-        error(e)
-      } 
-      if (!error || detach) {
-        if (typeof next === 'undefined' && yielded) {
-          // if spawn is blocking and we yielded, then throw via the future
-          return future.throw(e)
-        } else {
-          // otherwise, just throw it
-          throw e
-        }
-      }
       if (error) {
-        // return if error was defined and we didn't go the detach route
-        return
+        // if there's an error callback then throw it that way
+        return error(e)
+      } else {
+        throw e
       }
     } finally {
-      // clean up 
+      // clean up
       var fiber_ = _spawnBookkeeping._fibers[fiberId]
       if (typeof fiber_ === 'undefined') {
         throw new Error('Failed to find current fiber in spawn.fibers')
@@ -277,90 +208,34 @@ function spawn(f, next, error, detach) {
       --_spawnBookkeeping._fibers._length
     }
   }
-  
-  var runCalled = new Future()
 
-  // function used to block and wait for a result
-  // var blockFunction = function(runCalled, returned, ret, err, yielded, future) {
-  var blockFunction = function() {
-    runCalled.wait()
-    if (returned) {
-      // if returned is true, then f executed without yielding, so return the result
-      return ret
-    }
-    if (typeof err === 'undefined') {
-      // if err is undefined, then f yielded without error
-      yielded = true
-      // note: this will throw if there is an exception and there is no error callback
-      future.wait()
-      // when future.wait returns, then we have a result, return it
-      return ret
-    } else {
-      // otherwise we didn't yield and there was an exception
-      // XXX: do we want to throw here? previously, we did not if there was an
-      //      error callback
-      throw err
-    }
-  }
-  // }.bind(undefined, runCalled, returned, ret, err, yielded, future)
-
-  detach = detach ? true : false
-
-  if (!next && !detach) {
-    // if a callback was not passed execute synchronously in this fiber
-    // first off, make sure we're in a fiber
-    if (typeof Fiber.current === 'undefined') {
-      debug('trying to invoke spawn synchronously outside of a fiber, falling ' +
-            'back to async')
-      detachFallback = true
-    } else {
-      try {
-        return f()
-      } catch (e) {
-        if (error) {
-          return error(e)
-        }
-        throw e
-      }
-    }
-  }
-  
   var fiberId = _spawnBookkeeping._getFiberId()
 
-  fiber = new Fiber(fiberFunction.bind(undefined, fiberId))
+  var fiber = new Fiber(fiberFunction.bind(undefined, fiberId))
 
   // maintain a handle for this fiber so it doesn't get garbage collected
   _spawnBookkeeping._fibers[fiberId] = fiber
   ++_spawnBookkeeping._fibers._length
 
-  // otherwise, run async on nextTick 
-  process.nextTick(function(fiber, detachFallback, detach) {
+  // otherwise, run async on nextTick
+  process.nextTick(function(fiber) {
     try {
       fiber.run()
     } catch (e) {
-      if (detachFallback) {
-        throw e
-      }
       // we will only get here if next is defined, but error is not
       // assume that the caller doesn't care if there is an error, but log
       // to `debug` in case
       debug('Exception caught with error undefined in fibers.spawn: ' +
             inspect(e))
-    } finally {
-      if (detach) {
-        runCalled.return()
-      }
     }
-  }.bind(undefined, fiber, detachFallback, detach))
-
-  return detach ? blockFunction : undefined
+  }.bind(undefined, fiber))
 }
 
-/****************************************************************************************************
+/******************************************************************************
  * module.exports
  */
 module.exports = {
-  __:  __,
+  __:  __ensure,
   getFiberPoolSize: getFiberPoolSize,
   setFiberPoolSize: setFiberPoolSize,
   getFibersCreated: getFibersCreated,
