@@ -120,17 +120,17 @@ module.exports = o({
       _type: __Test,
       name: 'cbTest',
       doTest: function() {
-        var error = undefined
-        var result = undefined
+        var err = undefined
+        var res = undefined
         __(function() {
           return 1
         }, function(e, r) {
-          error = e
-          result = r
+          err = e
+          res = r
         })
         assert(!FiberSpy.called)
-        assert.equal(result, 1)
-        assert(!error)
+        assert.equal(res, 1)
+        assert(!err)
       }
     }),
 
@@ -142,20 +142,135 @@ module.exports = o({
       name: 'cbErrTest',
       doTest: function() {
         var self = this
-        var error = undefined
-        var result = undefined
+        var err = undefined
+        var res = undefined
         __(function() {
           throw new Error(self.name)
         }, function(e, r) {
-          error = e
-          result = r
+          err = e
+          res = r
         })
         assert(!FiberSpy.called)
-        assert.equal(typeof result, 'undefined')
-        assert(error instanceof Error)
-        assert(error.toString().includes(this.name))
+        assert.equal(typeof res, 'undefined')
+        assert(err instanceof Error)
+        assert(err.toString().includes(this.name))
       }
     }),
+    
+    /**************************************************************************
+     * __.spawn tests
+     */
+    o({
+      _type: __Test,
+      name: 'noCbTestSpawn',
+      doTest: function(ctx, done) {
+        var spy = sinon.spy()
+        __.spawn(function() {
+          spy(1)
+        })
+        setImmediate(function() {
+          var err = undefined
+          try {
+            assert(FiberSpy.called)
+            assert.equal(spy.firstCall.args[0], 1)
+          } catch (e) {
+            err = e
+          }
+          done(err)
+        })
+      }
+    }),
+
+    /**************************************************************************
+     *
+     */
+    o({
+      _type: __Test,
+      name: 'noCbErrTestSpawn',
+      doTest: function(ctx, done) {
+        var self = this
+        var spy = sinon.spy()
+        assert.doesNotThrow(function() {
+          __.spawn(function() {
+            spy(1)
+            throw new Error(self.name)
+          })
+        }, Error)
+        setImmediate(function() {
+          var err = undefined
+          try {
+            assert(FiberSpy.called)
+            assert(debugSpy.spy.firstCall.args[0].includes(self.name))
+            assert.equal(spy.firstCall.args[0], 1)
+          } catch (e) {
+            err = e
+          }
+          done(err)
+        })
+      }
+    }),
+
+    /**************************************************************************
+     *
+     */
+    o({
+      _type: __Test,
+      name: 'cbTestSpawn',
+      doTest: function(ctx, done) {
+        var self = this
+        var err = undefined
+        var res = undefined
+        __.spawn(function() {
+          return 1
+        }, function(e, r) {
+          err = e
+          res = r
+        })
+        setImmediate(function() {
+          try {
+            assert(FiberSpy.called)
+            assert.equal(res, 1)
+            assert.equal(err, null)
+            err = undefined
+          } catch (e) {
+            err = e
+          }
+          done(err)
+        })
+      }
+    }),
+
+    /**************************************************************************
+     *
+     */
+    o({
+      _type: __Test,
+      name: 'cbErrTestSpawn',
+      doTest: function(ctx, done) {
+        var self = this
+        var err = undefined
+        var res = undefined
+        __.spawn(function() {
+          throw new Error(self.name)
+        }, function(e, r) {
+          err = e
+          res = r
+        })
+        setImmediate(function() {
+          try {
+            assert(FiberSpy.called)
+            assert.equal(typeof res, 'undefined')
+            assert(err instanceof Error)
+            assert(err.toString().includes(self.name))
+            err = undefined
+          } catch (e) {
+            err = e
+          }
+          done(err)
+        })
+      }
+    }),
+    
     
     /**************************************************************************
      * __ tests outside of fiber
