@@ -65,7 +65,7 @@ __ensure.main.ensure = __ensure
 __ensure.spawn = __spawn
 
 //  __(.(ensure|main))*(.spawn(.main(.(ensure|main))*)?)?
-__ensure.spawn.main = _ensure.main
+__ensure.spawn.main = __ensure.main
 
 //  __(.(spawn|ensure|main))*
 __ensure.spawn.ensure = __ensure
