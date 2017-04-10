@@ -7,6 +7,6 @@ module.exports = o({
   name: 'FibersTests',
   tests: [
     _o('./__Tests'),
-    //_o('./spawnTests')
+    _o('./spawnTests')
   ]
 })

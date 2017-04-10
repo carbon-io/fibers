@@ -67,8 +67,11 @@ __ensure.spawn = __spawn
 //  __(.(ensure|main))*(.spawn(.main(.(ensure|main))*)?)?
 __ensure.spawn.main = __ensure.main
 
-//  __(.(spawn|ensure|main))*
+//  __(.(ensure|main))*(.spawn(.(ensure|main))*)?
 __ensure.spawn.ensure = __ensure
+
+//  __(.(spawn|ensure|main))*
+__ensure.spawn.spawn = __spawn
 
 /******************************************************************************
  * syncInvoke

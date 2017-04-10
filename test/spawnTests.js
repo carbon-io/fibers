@@ -18,9 +18,6 @@ var debugSpy = function(namespace) {
   return debugSpy.spy
 }
 
-mockery.registerMock('fibers', FiberSpy)
-mockery.registerMock('debug', debugSpy)
-
 /******************************************************************************
  *
  */
@@ -49,6 +46,9 @@ module.exports = o({
    *
    */
   _setup: function(mod) {
+    mockery.registerMock('fibers', FiberSpy)
+    mockery.registerMock('debug', debugSpy)
+
     mockery.enable({
       useCleanCache: true,
       warnOnUnregistered: false,
@@ -64,6 +64,7 @@ module.exports = o({
    */
   _teardown: function() {
     mockery.disable()
+    mockery.deregisterAll()
     assert.equal(this._spawnBookkeeping._fibers._length, this.spawnFibersLength)
     spawn = undefined
     FiberSpy.resetAll()
@@ -156,7 +157,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'errorCallbackException',
-      doTest: function(context, done) {
+      doTest: function(ctx, done) {
         var self = this
         var error = undefined
         var result = spawn(function() {
@@ -184,7 +185,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextCallback',
-      doTest: function(context, done) {
+      doTest: function(ctx, done) {
         var result = undefined
         var error = undefined
         spawn(function() {
@@ -222,7 +223,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextCallbackException',
-      doTest: function(context, done) {
+      doTest: function(ctx, done) {
         var self = this
         var nextSpy = sinon.spy()
         assert.doesNotThrow(function() {
@@ -253,7 +254,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextAndErrorCallback',
-      doTest: function(context, done) {
+      doTest: function(ctx, done) {
         var result = undefined
         var error = undefined
         var errorSpy = sinon.spy()
@@ -295,7 +296,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'nextAndErrorCallbackException',
-      doTest: function(context, done) {
+      doTest: function(ctx, done) {
         var self = this
         var error = undefined
         var nextSpy = sinon.spy()
@@ -333,7 +334,7 @@ module.exports = o({
     o({
       _type: SpawnTest,
       name: 'syncCallWithNestedAsyncCallUsingFutures',
-      doTest: function(context, done) {
+      doTest: function(ctx, done) {
         var self = this
         var error = undefined
         var result = undefined
