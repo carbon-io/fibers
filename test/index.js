@@ -10,7 +10,8 @@ __(function() {
     name: 'FibersTests',
     tests: [
       _o('./__Tests'),
-      _o('./spawnTests')
+      _o('./spawnTests'),
+      _o('../docs/code-frags/test')
     ]
   })
 })

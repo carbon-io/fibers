@@ -7,7 +7,7 @@ var fibers = require('../../..')
 var __ = fibers.__(module)
 
 __(function() {
-  o.main({
+  module.exports = o.main({
     _type: testtube.Test,
     name: 'FibersCodeFragsTests',
     tests: [
