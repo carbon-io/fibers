@@ -10,6 +10,43 @@ var Fiber = require('fibers')
 //       against resetting this property on Function.prototype.
 var Future = fibrous.Future
 
+
+/******************************************************************************
+ * getPoolSize
+ *
+ * @returns Fiber's current pool size
+ */
+function getFiberPoolSize() {
+  return Fiber.poolSize
+}
+
+/******************************************************************************
+ * setPoolSize
+ *
+ * @param {Integer} poolSize - set Fiber's pool size to poolSize
+ */
+function setFiberPoolSize(poolSize) {
+  Fiber.poolSize = poolSize
+}
+
+/******************************************************************************
+ * getFibersCreated
+ *
+ * @returns The number of fibers created
+ */
+function getFibersCreated() {
+  return Fiber.fibersCreated
+}
+
+/******************************************************************************
+ * getCurrentFiber
+ *
+ * @returns The current fiber
+ */
+function getCurrentFiber() {
+  return Fiber.current
+}
+
 var __spawn = function(f, cb) {
   if (cb) {
     return spawn(f,
@@ -29,7 +66,7 @@ var __ensure = function(f, cb) {
     // handle require('fibers').__(mod)
     return __ensure
   }
-  if (typeof Fiber.current === 'undefined') {
+  if (typeof __ensure._getCurrentFiber() === 'undefined') {
     return __spawn(f, cb)
   }
   var ret = undefined
@@ -48,6 +85,9 @@ var __ensure = function(f, cb) {
     }
   }
 }
+
+// to allow stubbing in tests (can probably get rid of this with proxy objects?)
+__ensure._getCurrentFiber = getCurrentFiber
 
 //  __(.main)?
 __ensure.main = function() {
@@ -93,7 +133,7 @@ __ensure.spawn.spawn = __spawn
  */
 function syncInvoke(that, method, args) {
   var result
-  var fiber = Fiber.current
+  var fiber = getCurrentFiber()
   var yielded = false
   var callbackCalled = false
   var wasError = false
@@ -128,33 +168,6 @@ function syncInvoke(that, method, args) {
     }
   }
   return result
-}
-
-/******************************************************************************
- * getPoolSize
- *
- * @returns Fiber's current pool size
- */
-function getFiberPoolSize() {
-  return Fiber.poolSize
-}
-
-/******************************************************************************
- * setPoolSize
- *
- * @param {Integer} poolSize - set Fiber's pool size to poolSize
- */
-function setFiberPoolSize(poolSize) {
-  Fiber.poolSize = poolSize
-}
-
-/******************************************************************************
- * getFibersCreated
- *
- * @returns The number of fibers created
- */
-function getFibersCreated() {
-  return Fiber.fibersCreated
 }
 
 // Number.MAX_SAFE_INTEGER == 9007199254740991
@@ -239,9 +252,10 @@ module.exports = {
   getFiberPoolSize: getFiberPoolSize,
   setFiberPoolSize: setFiberPoolSize,
   getFibersCreated: getFibersCreated,
+  getCurrentFiber: getCurrentFiber,
   syncInvoke: syncInvoke, // Backward compat
   spawn: spawn, // Backward compat
-  _spawnBookkeeping: _spawnBookkeeping // expose spawn bookkeeping for tests
+  _spawnBookkeeping: _spawnBookkeeping, // expose spawn bookkeeping for tests
 }
 
 Object.defineProperty(module.exports, '$Test', {
