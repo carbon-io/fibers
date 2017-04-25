@@ -71,7 +71,8 @@ var __spawn = function(f, cb, logger) {
 var __ensure =  function(mod) {
   // XXX: consider using `Module.parent` and `delete require.cache[module.id]`
   if (!(mod instanceof Module)) {
-    throw new TypeError('Module required (e.g., "var __ = require(\'@carbon-io/fibers\').__(module)")')
+    throw new TypeError(
+      'Module required (e.g., "var __ = require(\'@carbon-io/fibers\').__(module)")')
   }
   var __ = function(f, cb) {
     if (typeof __ensure._getCurrentFiber() === 'undefined') {
@@ -84,8 +85,10 @@ var __ensure =  function(mod) {
         cb(null, ret)
       }
     } catch (e) {
+      // XXX: do we want to log to stderr here? setting mod to undefined for 
+      //      now to disable stderr
       _debugLogger(
-        mod, 'Exception caught with cb undefined in __: ' + inspect(e))
+        undefined, 'Exception caught with cb undefined in __: ' + inspect(e))
       if (cb) {
         cb(e)
       } else {
