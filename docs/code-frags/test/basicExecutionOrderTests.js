@@ -20,9 +20,6 @@ __(function() {
     _type: testtube.Test,
     name: 'BasicExecutionOrderTests',
     setup: function() {
-      this.getCurrentFiberStub = 
-        sinon.stub(
-          CarbonIOMock.fibers.__, '_getCurrentFiber')
       mockery.registerMock('@carbon-io/carbon-io', CarbonIOMock)
       mockery.enable({
         useCleanCache: true,
@@ -32,7 +29,6 @@ __(function() {
     },
     teardown: function() {
       mockery.disable()
-      this.getCurrentFiberStub.restore()
       mockery.deregisterMock('@carbon-io/carbon-io')
     },
     tests: [
@@ -42,12 +38,15 @@ __(function() {
         setup: function() {
           var self = this
           var counter = 0
-          this.parent.getCurrentFiberStub.onCall(
+          this.getCurrentFiberStub = 
+            sinon.stub(
+              CarbonIOMock.fibers.__, '_getCurrentFiber')
+          this.getCurrentFiberStub.onCall(
             counter++).returns(undefined)
-          this.parent.getCurrentFiberStub.onCall(
+          this.getCurrentFiberStub.onCall(
             counter++).returns(undefined)
           for (var i=0; i<9; i++) {
-            this.parent.getCurrentFiberStub.onCall(
+            this.getCurrentFiberStub.onCall(
               counter++).returns(new Fiber(sinon.spy()))
           }
           this.output = ''
@@ -57,7 +56,7 @@ __(function() {
         },
         teardown: function() {
           this.logStub.restore()
-          this.parent.getCurrentFiberStub.reset()
+          this.getCurrentFiberStub.restore()
         },
         doTest: function(ctx, done) {
           var self = this
