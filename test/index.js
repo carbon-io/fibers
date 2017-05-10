@@ -9,8 +9,9 @@ __(function() {
     _type: testtube.Test,
     name: 'FibersTests',
     tests: [
-      _o('./__Tests'),
-      _o('./spawnTests'),
+      _o('./__-tests'),
+      _o('./spawn-tests'),
+      _o('./syncInvoke-tests'),
       _o('../docs/code-frags/test')
     ]
   })

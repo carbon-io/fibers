@@ -167,7 +167,11 @@ function syncInvoke(that, method, args) {
   })
 
   // apply() may or may not result in callback being called synchronously
-  that[method].apply(that, args)
+  if (that) {
+    that[method].apply(that, args)
+  } else {
+    method.apply(undefined, args)
+  }
   if (!callbackCalled) { // check if apply() called callback
     yielded = true
     result = Fiber.yield()
