@@ -10,10 +10,9 @@ structures -- a phenomenon often termed "callback hell" or "pyramid of doom."
 Many different libraries and techniques exist to help programmers manage this
 complexity. While any can be used with Carbon.io, as it supports both
 synchronous and asynchronous programming styles, Carbon.io's preferred
-technique is to use `fibers <https://github.com/laverdet/node-fibers>`_ in
-conjunction with `fibrous <https://github.com/goodeggs/fibrous>`_.
+technique is to use `fibers <https://github.com/laverdet/node-fibers>`_.
 
-While ``fibers`` provides basic coroutine support, ``fibrous`` implements the
+While ``fibers`` provides basic coroutine support, ``Carbon.io`` implements the
 abstractions necessary to allow you as the programmer to more easily write
 non-blocking code in a synchronous style.
 
@@ -21,15 +20,17 @@ Consider this standard asyncronous operation:
 
 .. literalinclude:: ../code-frags/examples/syncAsync.js
   :language: javascript
-  :lines: 9,11-18
+  :lines: 11-17
+  :dedent: 2
   :linenos: 
      
 
-With ``fibers``/``fibrous`` you can do this:
+With ``fibers`` you can do this:
 
 .. literalinclude:: ../code-frags/examples/syncAsync.js
   :language: javascript
-  :lines: 20,22-30
+  :lines: 22-29
+  :dedent: 2
   :linenos: 
 
 Note that no callback is passed to ``readFile``. Instead ``readFile``
@@ -51,7 +52,8 @@ Here is a full example:
 
 .. literalinclude:: ../code-frags/examples/syncAsync.js
   :language: javascript
-  :lines: 1,3-6,20,22-30
+  :lines: 52-65
+  :dedent: 2
   :linenos: 
 
 Again notice that no callback is passed to ``readFile.sync``. 
@@ -66,15 +68,15 @@ you become more familiar with the Carbon.io landscape (see: ``@carbon-io/test-tu
 
 To illustate, the following code:
 
-..  literalinclude:: ../code-frags/examples/basicExecutionOrder.js
+.. literalinclude:: ../code-frags/examples/basicExecutionOrder.js
   :language: javascript
   :linenos: 
 
 produces this output:
 
-..  literalinclude:: ../code-frags/test/basicExecutionOrderTests.js
+.. literalinclude:: ../code-frags/test/basicExecutionOrderTests.js
   :language: sh
-  :lines: 69-85
+  :lines: 68-84
   :linenos:
 
 In addition to the bare ``__`` operator, as you may have noticed from the
@@ -86,7 +88,7 @@ Using sync
 ----------
 
 The ``fibers`` module exposes a ``sync`` property on both ``Functions`` and
-``Objects`` (via ``fibrous``).
+``Objects``.
 
 When ``sync`` is used on a function, ``sync`` returns a new function that is a
 synchronous version of the original. The new function takes the same arguments
@@ -96,6 +98,7 @@ the result or throws an ``Error`` if an error occurs.
 .. literalinclude:: ../code-frags/examples/syncAsync.js
   :language: javascript
   :lines: 23-24,26-28
+  :dedent: 4
   :linenos: 
 
 When ``sync`` is used on an object, ``sync`` returns a new object that
@@ -104,6 +107,7 @@ is the same as the original except all methods are synchronous.
 .. literalinclude:: ../code-frags/examples/syncAsync.js
   :language: javascript
   :lines: 35-36,38-40
+  :dedent: 4
   :linenos: 
 
 When working with instances of "classes" where methods may interact

@@ -1,4 +1,5 @@
 var assert = require('assert')
+var path = require('path')
 var fs = require('fs')
 
 var mockery = require('mockery')
@@ -134,6 +135,23 @@ __(function() {
               return done()
             })
           })
+        }
+      }),
+      o({
+        _type: testtube.Test,
+        name: 'logFileContentsSyncFullExampleTest',
+        setup: function() {
+          this.parent.logSpy.reset()
+          process.env.EXAMPLE_PATH = path.join(__dirname, '..', 'examples', 'data', 'foo.txt')
+        },
+        teardown: function() {
+          delete process.env.EXAMPLE_PATH
+        },
+        doTest: function() {
+          var logFileContentsSyncFullExample = 
+            require('../examples/syncAsync').logFileContentsSyncFullExample
+          logFileContentsSyncFullExample()
+          assert.equal(this.parent.logSpy.firstCall.args[0], 'foo')
         }
       })
     ]

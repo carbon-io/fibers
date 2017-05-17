@@ -48,9 +48,27 @@ function logFileContentsReturnValSync(path, cb) {
   }, cb)
 }
 
+function logFileContentsSyncFullExample() {
+  var fs = require('fs')
+
+  var carbon = require('@carbon-io/carbon-io')
+  var __ = carbon.fibers.__(module)
+
+  __(function() {
+    var path = process.env.EXAMPLE_PATH || '/foo/bar'
+    try {
+      var data = fs.readFile.sync(path)
+      console.log(data)
+    } catch (err) {
+      console.log(err)
+    } 
+  })
+}
+
 module.exports = {
   logFileContentsAsync: logFileContentsAsync,
   logFileContentsSync: logFileContentsSync,
   logFileContentsObjectSync: logFileContentsObjectSync,
-  logFileContentsReturnValSync: logFileContentsReturnValSync
+  logFileContentsReturnValSync: logFileContentsReturnValSync,
+  logFileContentsSyncFullExample: logFileContentsSyncFullExample
 }
