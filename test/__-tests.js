@@ -55,7 +55,7 @@ __(function() {
         warnOnUnregistered: false,
         warnOnReplace: false
       })
-      __ = require('../index').__
+      __ = require('../index').__(mod)
       this._spawnBookkeeping = require('../index')._spawnBookkeeping
       this.spawnFibersLength = this._spawnBookkeeping._fibers._length
     },
@@ -157,7 +157,7 @@ __(function() {
           assert(err.toString().includes(this.name))
         }
       }),
-      
+
       /**************************************************************************
        * __.spawn tests
        */
@@ -271,8 +271,8 @@ __(function() {
           })
         }
       }),
-      
-      
+
+
       /**************************************************************************
        * __ tests outside of fiber
        */
@@ -421,8 +421,8 @@ __(function() {
           })
         }
       }),
-      
-      
+
+
       /**************************************************************************
        * __.main tests with mod == require.main
        */
@@ -439,7 +439,7 @@ __(function() {
           assert.equal(spy.firstCall.args[0], 1)
         }
       }),
-      
+
       /**************************************************************************
        *
        */
@@ -460,7 +460,7 @@ __(function() {
           assert.equal(spy.firstCall.args[0], 1)
         }
       }),
-      
+
       /**************************************************************************
        *
        */
@@ -521,7 +521,7 @@ __(function() {
           assert.equal(spy.firstCall.args[0], 1)
         }
       }),
-      
+
       /**************************************************************************
        *
        */
@@ -541,7 +541,7 @@ __(function() {
           assert.equal(spy.firstCall.args[0], 1)
         }
       }),
-      
+
       /**************************************************************************
        *
        */
@@ -562,7 +562,7 @@ __(function() {
           assert.equal(err, null)
         }
       }),
-      
+
       /**************************************************************************
        *
        */
@@ -585,7 +585,102 @@ __(function() {
           assert.equal(err.message, this.name)
         }
       }),
-      
+
+      /**************************************************************************
+       * XXX: remove when we have a separate logging module
+       */
+      o({
+        _type: __Test,
+        name: 'consoleErrorCalledForMainModuleNoFiber',
+        mod: require.main,
+        setup: function() {
+          __Test.prototype.setup.call(this)
+          sinon.spy(console, 'error')
+          sinon.stub(FiberSpy, '_getCurrent').returns(undefined)
+        },
+        teardown: function() {
+          FiberSpy._getCurrent.restore()
+          console.error.restore()
+          __Test.prototype.teardown.call(this)
+        },
+        doTest: function(ctx, done) {
+          var self = this
+          __(function() {
+            _o('./fixtures/badRequirement')
+          })
+          setImmediate(function() {
+            var err = undefined
+            try {
+              assert.equal(console.error.callCount, 2)
+              assert.equal(debugSpy.spy.callCount, 2)
+            } catch (e) {
+              err = e
+            }
+            done(err)
+          })
+        }
+      }),
+
+      /**************************************************************************
+       * XXX: remove when we have a separate logging module
+       */
+      o({
+        _type: __Test,
+        name: 'consoleErrorNotCalledForChildModuleNoFiber',
+        setup: function() {
+          __Test.prototype.setup.call(this)
+          sinon.spy(console, 'error')
+          sinon.stub(FiberSpy, '_getCurrent').returns(undefined)
+        },
+        teardown: function() {
+          FiberSpy._getCurrent.restore()
+          console.error.restore()
+          __Test.prototype.teardown.call(this)
+        },
+        doTest: function(ctx, done) {
+          var self = this
+          __(function() {
+            _o('./fixtures/badRequirement')
+          })
+          setImmediate(function() {
+            var err = undefined
+            try {
+              assert.equal(console.error.callCount, 0)
+              assert.equal(debugSpy.spy.callCount, 2)
+            } catch (e) {
+              err = e
+            }
+            done(err)
+          })
+        }
+      }),
+
+      /**************************************************************************
+       * XXX: remove when we have a separate logging module
+       */
+      o({
+        _type: __Test,
+        name: 'consoleErrorNotCalledForChildModuleInFiber',
+        setup: function() {
+          __Test.prototype.setup.call(this)
+          sinon.spy(console, 'error')
+        },
+        teardown: function() {
+          console.error.restore()
+          __Test.prototype.teardown.call(this)
+        },
+        doTest: function() {
+          var self = this
+          assert.throws(function() {
+            __(function() {
+              _o('./fixtures/badRequirement')
+            })
+          }, /foo is not defined/)
+          assert.equal(console.error.callCount, 0)
+          assert.equal(debugSpy.spy.callCount, 1)
+        }
+      }),
+
       /**************************************************************************
        *
        */
@@ -593,7 +688,9 @@ __(function() {
         _type: __Test,
         name: 'ensureSpawnMainRefTest',
         doTest: function() {
-          assert.equal(__(module), __)
+          // XXX: reinstate when module no longer needed (required for logging
+          //      errors during initialization)
+          // assert.equal(__(module), __)
 
           assert.equal(__, __.ensure)
           assert.equal(__, __.ensure.ensure)

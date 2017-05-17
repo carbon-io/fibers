@@ -10,6 +10,12 @@ var Fiber = require('fibers')
 //       against resetting this property on Function.prototype.
 var Future = fibrous.Future
 
+var _debugLogger = function(mod, msg) {
+  debug(msg)
+  if (mod === require.main) {
+    console.error(msg)
+  }
+}
 
 /******************************************************************************
  * getPoolSize
@@ -47,7 +53,7 @@ function getCurrentFiber() {
   return Fiber.current
 }
 
-var __spawn = function(f, cb) {
+var __spawn = function(f, cb, logger) {
   if (cb) {
     return spawn(f,
                  function(result) {
@@ -55,63 +61,71 @@ var __spawn = function(f, cb) {
                  },
                  function(err) {
                    cb(err)
-                 })
+                 },
+                 logger)
   }
-  return spawn(f, undefined, undefined)
+  return spawn(f, undefined, undefined, logger)
 }
 
 // ensure that f gets executed in a Fiber:
-var __ensure = function(f, cb) {
-  if (f instanceof Module) {
-    // handle require('fibers').__(mod)
-    return __ensure
+var __ensure =  function(mod) {
+  // XXX: consider using `Module.parent` and `delete require.cache[module.id]`
+  if (!(mod instanceof Module)) {
+    throw new TypeError(
+      'Module required (e.g., "var __ = require(\'@carbon-io/fibers\').__(module)")')
   }
-  if (typeof __ensure._getCurrentFiber() === 'undefined') {
-    return __spawn(f, cb)
-  }
-  var ret = undefined
-  try {
-    ret = f()
-    if (cb) {
-      cb(null, ret)
+  var __ = function(f, cb) {
+    if (typeof __ensure._getCurrentFiber() === 'undefined') {
+      return __spawn(f, cb, _debugLogger.bind(undefined, mod))
     }
-  } catch (e) {
-    debug('Exception caught with cb undefined in __: ' +
-          inspect(e))
-    if (cb) {
-      cb(e)
-    } else {
-      throw e
+    var ret = undefined
+    try {
+      ret = f()
+      if (cb) {
+        cb(null, ret)
+      }
+    } catch (e) {
+      // XXX: do we want to log to stderr here? setting mod to undefined for 
+      //      now to disable stderr
+      _debugLogger(
+        undefined, 'Exception caught with cb undefined in __: ' + inspect(e))
+      if (cb) {
+        cb(e)
+      } else {
+        throw e
+      }
     }
   }
+
+  //  __(.main)?
+  __.main = function() {
+    console.warn('"__.main" is DEPRECATED and no longer necessary')
+    return __.apply(undefined, arguments)
+  }
+
+  //  __(.ensure)*(.main)?
+  __.ensure = __
+
+  //  __(.(ensure|main))*
+  __.main.ensure = __
+
+  //  __(.(ensure|main))*(.spawn)?
+  __.spawn = __spawn
+
+  //  __(.(ensure|main))*(.spawn(.main(.(ensure|main))*)?)?
+  __.spawn.main = __.main
+
+  //  __(.(ensure|main))*(.spawn(.(ensure|main))*)?
+  __.spawn.ensure = __
+
+  //  __(.(spawn|ensure|main))*
+  __.spawn.spawn = __spawn
+
+  return __
 }
 
 // to allow stubbing in tests (can probably get rid of this with proxy objects?)
 __ensure._getCurrentFiber = getCurrentFiber
-
-//  __(.main)?
-__ensure.main = function() {
-  console.warn('"__.main" is DEPRECATED and no longer necessary')
-  return __ensure.apply(undefined, arguments)
-}
-
-//  __(.ensure)*(.main)?
-__ensure.ensure = __ensure
-
-//  __(.(ensure|main))*
-__ensure.main.ensure = __ensure
-
-//  __(.(ensure|main))*(.spawn)?
-__ensure.spawn = __spawn
-
-//  __(.(ensure|main))*(.spawn(.main(.(ensure|main))*)?)?
-__ensure.spawn.main = __ensure.main
-
-//  __(.(ensure|main))*(.spawn(.(ensure|main))*)?
-__ensure.spawn.ensure = __ensure
-
-//  __(.(spawn|ensure|main))*
-__ensure.spawn.spawn = __spawn
 
 /******************************************************************************
  * syncInvoke
@@ -153,7 +167,11 @@ function syncInvoke(that, method, args) {
   })
 
   // apply() may or may not result in callback being called synchronously
-  that[method].apply(that, args)
+  if (that) {
+    that[method].apply(that, args)
+  } else {
+    method.apply(undefined, args)
+  }
   if (!callbackCalled) { // check if apply() called callback
     yielded = true
     result = Fiber.yield()
@@ -192,7 +210,9 @@ var _spawnBookkeeping = {
  *                       bubbled up if running synchronously, otherwise, errors
  *                       will be lost
  */
-function spawn(f, next, error) {
+function spawn(f, next, error, logger) {
+  // XXX: logger is explicitly omitted from the documentation since this is 
+  //      just a temporary fix
   var fiberFunction = function(fiberId) {
     var ret = undefined
     try {
@@ -203,7 +223,7 @@ function spawn(f, next, error) {
         // drop it
       }
     } catch (e) {
-      debug(e.stack)
+      (logger || debug)(e.stack)
       if (error) {
         // if there's an error callback then throw it that way
         return error(e)
@@ -238,8 +258,8 @@ function spawn(f, next, error) {
       // we will only get here if next is defined, but error is not
       // assume that the caller doesn't care if there is an error, but log
       // to `debug` in case
-      debug('Exception caught with error undefined in fibers.spawn: ' +
-            inspect(e))
+      (logger || debug)(
+        'Exception caught with error undefined in fibers.spawn: ' + inspect(e))
     }
   }.bind(undefined, fiber))
 }
