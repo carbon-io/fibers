@@ -1,6 +1,10 @@
 var inspect = require('util').inspect
 var Module = require('module')
 
+/***************************************************************************************************
+ * @namespace fibers
+ */
+
 var debug = require('debug')('@carbon-io/fibers')
 
 var fibrous = require('@carbon-io/fibrous')
@@ -17,37 +21,42 @@ var _debugLogger = function(mod, msg) {
   }
 }
 
-/******************************************************************************
- * getPoolSize
- *
- * @returns Fiber's current pool size
+/***************************************************************************************************
+ * @method getPoolSize
+ * @description getPoolSize description
+ * @memberof fibers
+ * @returns {xxx} -- Fiber's current pool size
  */
 function getFiberPoolSize() {
   return Fiber.poolSize
 }
 
-/******************************************************************************
- * setPoolSize
- *
- * @param {Integer} poolSize - set Fiber's pool size to poolSize
+/***************************************************************************************************
+ * @method setPoolSize
+ * @description setPoolSize description
+ * @memberof fibers
+ * @param {Integer} poolSize -- set Fiber's pool size to poolSize
+ * @returns {undefined} -- undefined
  */
 function setFiberPoolSize(poolSize) {
   Fiber.poolSize = poolSize
 }
 
-/******************************************************************************
- * getFibersCreated
- *
- * @returns The number of fibers created
+/***************************************************************************************************
+ * @method getFibersCreated
+ * @description getFibersCreated description
+ * @memberof fibers
+ * @returns {number} -- The number of fibers created
  */
 function getFibersCreated() {
   return Fiber.fibersCreated
 }
 
-/******************************************************************************
- * getCurrentFiber
- *
- * @returns The current fiber
+/***************************************************************************************************
+ * @method getCurrentFiber
+ * @description getCurrentFiber description
+ * @memberof fibers
+ * @returns {xxx} -- The current fiber
  */
 function getCurrentFiber() {
   return Fiber.current
@@ -127,22 +136,18 @@ var __ensure =  function(mod) {
 // to allow stubbing in tests (can probably get rid of this with proxy objects?)
 __ensure._getCurrentFiber = getCurrentFiber
 
-/******************************************************************************
- * syncInvoke
+/***************************************************************************************************
+ * @method syncInvoke
+ * @description Based on technique used by 0ctave and olegp:
+ *              (https://github.com/0ctave/node-sync/blob/master/lib/sync.js)
+ *              (https://github.com/olegp/mongo-sync/blob/master/lib/mongo-sync.js)
+ * @memberof fibers
+ * @param {Object} that -- receiver
+ * @param {String} method -- name of method
+ * @param {Array} args -- xxx
  *
- * Based on technique used by 0ctave and olegp:
- *     (https://github.com/0ctave/node-sync/blob/master/lib/sync.js)
- *     (https://github.com/olegp/mongo-sync/blob/master/lib/mongo-sync.js)
- *
- * @param {Object} that - receiver
- * @param {String} method - name of method
- * @param {Array} args
- *
- * @return {*} returns what the method would have returned via the supplied
- *             callback accepted by invoked async method must be of form
- *             f(err, value)
- * @throws {Error}
- *
+ * @throws {Error} -- xxx
+ * @returns {undefined} -- undefined
  * @ignore
  */
 function syncInvoke(that, method, args) {
@@ -199,16 +204,17 @@ var _spawnBookkeeping = {
   }
 }
 
-/******************************************************************************
- * spawn
- *
- * @param {Function} f - function to spawn within a Fiber
- * @param {Function} next - optional callback
- * @param {Function} error - optional callback
- * @returns result - if `next` is not passed, the result of `f` will be returned
- * @throws {Exception} - if no error callback is passed, any exception will be
- *                       bubbled up if running synchronously, otherwise, errors
- *                       will be lost
+/***************************************************************************************************
+ * @method spawn
+ * @description spawn description
+ * @memberof fibers
+ * @param {Function} f -- function to spawn within a Fiber
+ * @param {Function} next -- optional callback
+ * @param {Function} error -- optional callback
+ * @throws {Exception} -- if no error callback is passed, any exception will be
+ *                        bubbled up if running synchronously, otherwise, errors
+ *                        will be lost
+ * @returns {xxx} -- if `next` is not passed, the result of `f` will be returned
  */
 function spawn(f, next, error, logger) {
   // XXX: logger is explicitly omitted from the documentation since this is 
@@ -264,7 +270,7 @@ function spawn(f, next, error, logger) {
   }.bind(undefined, fiber))
 }
 
-/******************************************************************************
+/***************************************************************************************************
  * module.exports
  */
 module.exports = {
