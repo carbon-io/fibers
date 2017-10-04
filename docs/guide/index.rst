@@ -3,7 +3,7 @@ Fibers
 ======
 
 One of the most notable differences between Node.js and other languages is
-Node's non-blocking IO, and resulting asyncronous programming model. While this
+Node's non-blocking IO, and resulting asynchronous programming model. While this
 has many advantages, it can often be challenging to work with complex callback
 structures -- a phenomenon often termed "callback hell" or "pyramid of doom."
 
