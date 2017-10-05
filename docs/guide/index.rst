@@ -16,7 +16,7 @@ While ``fibers`` provides basic coroutine support, ``Carbon.io`` implements the
 abstractions necessary to allow you as the programmer to more easily write
 non-blocking code in a synchronous style.
 
-Consider this standard asyncronous operation:
+Consider this standard asynchronous operation:
 
 .. literalinclude:: ../code-frags/examples/syncAsync.js
   :language: javascript
@@ -39,7 +39,7 @@ evaluates to its result or throws an ``Error``.
 Creating Fibers 
 ---------------
 
-In order to syncronously call asyncronous functions, the calls must
+In order to synchronously call asynchronous functions, the calls must
 execute inside of a ``Fiber``.
 
 This is done via the ``__`` operator. The ``__`` operator takes a function of
