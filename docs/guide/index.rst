@@ -1,4 +1,4 @@
-======   
+======
 Fibers
 ======
 
@@ -22,8 +22,8 @@ Consider this standard asynchronous operation:
   :language: javascript
   :lines: 11-17
   :dedent: 2
-  :linenos: 
-     
+  :linenos:
+
 
 With ``fibers`` you can do this:
 
@@ -31,12 +31,12 @@ With ``fibers`` you can do this:
   :language: javascript
   :lines: 22-29
   :dedent: 2
-  :linenos: 
+  :linenos:
 
 Note that no callback is passed to ``readFile``. Instead ``readFile``
-evaluates to its result or throws an ``Error``. 
+evaluates to its result or throws an ``Error``.
 
-Creating Fibers 
+Creating Fibers
 ---------------
 
 In order to synchronously call asynchronous functions, the calls must
@@ -54,9 +54,9 @@ Here is a full example:
   :language: javascript
   :lines: 52-65
   :dedent: 2
-  :linenos: 
+  :linenos:
 
-Again notice that no callback is passed to ``readFile.sync``. 
+Again notice that no callback is passed to ``readFile.sync``.
 
 The ``__`` operator itself executes synchronously or asynchronously depending on the
 context in which it is invoked. If it is called within the context of an active
@@ -70,7 +70,7 @@ To illustate, the following code:
 
 .. literalinclude:: ../code-frags/examples/basicExecutionOrder.js
   :language: javascript
-  :linenos: 
+  :linenos:
 
 produces this output:
 
@@ -83,8 +83,8 @@ In addition to the bare ``__`` operator, as you may have noticed from the
 previous example, fibers provides the ``__.spawn`` function which will always
 execute asynchronously (``__`` actually delegates execution to ``__.spawn`` in
 the case that it is invoked outside of an active ``Fiber``).
-  
-Using sync 
+
+Using sync
 ----------
 
 The ``fibers`` module exposes a ``sync`` property on both ``Functions`` and
@@ -99,7 +99,7 @@ the result or throws an ``Error`` if an error occurs.
   :language: javascript
   :lines: 23-24,26-28
   :dedent: 4
-  :linenos: 
+  :linenos:
 
 When ``sync`` is used on an object, ``sync`` returns a new object that
 is the same as the original except all methods are synchronous.
@@ -108,17 +108,17 @@ is the same as the original except all methods are synchronous.
   :language: javascript
   :lines: 35-36,38-40
   :dedent: 4
-  :linenos: 
+  :linenos:
 
 When working with instances of "classes" where methods may interact
 with a ``this``, one should use the second form:
-``obj.sync.<method>(...)``. 
+``obj.sync.<method>(...)``.
 
 Return Values
 -------------
 
 Currently, ``__`` and ``__.spawn`` return ``undefined``. If you want to perform some computation asynchronously and retrieve the result, you can do this by passing an "errback".
-  
+
 Using Fibers in Carbon.io applications
 --------------------------------------
 
@@ -128,7 +128,7 @@ sure that all entry points to the event loop are wrapped in ``__``.
 One example of this is your main program. You will often see example
 applications structured like this:
 
-..  code-block:: javascript 
+..  code-block:: javascript
   :linenos:
 
   __(function() {
@@ -140,7 +140,7 @@ allow you to use ``sync`` in your application code.
 
 Additionally, you will often see test modules structured as follows:
 
-..  code-block:: javascript 
+..  code-block:: javascript
   :linenos:
 
   __(function() {
@@ -164,8 +164,8 @@ You may find that there are other times when you need your code to run
 in a ``Fiber``, such as the callback to a timer. In each instance you can
 use the ``__`` function to create and run a Fiber.
 
-The :ref:`application structure <Application structure>` section of the
-:ref:`server guide <Server guide (Carbond)>` provides more
+The :ref:`application structure <carbond-application-structure>` section of the
+:ref:`server guide <carbond-server-guide>` provides more
 information on how to use ``Fibers`` with ``Carbond``.
 
 Debugging
@@ -176,7 +176,5 @@ expect, it could be that an unhandled exception is the cause. Normally, these
 exceptions are swallowed silently (note, this is a programming error as these
 exceptions should be handled further up the call chain), but you can enable
 logging of these errors via the `debug <https://github.com/visionmedia/debug>`_
-module by adding ``DEBUG="@carbon-io/fibers"`` to the environment. 
-
-
+module by adding ``DEBUG="@carbon-io/fibers"`` to the environment.
 
