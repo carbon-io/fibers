@@ -66,5 +66,14 @@ env/
 scratch
 
 # Docs
-docs/
+docs/*
 !docs/code-frags
+init-docs-env
+.jsdoc-directories
+
+# # git
+.gitmodules
+
+# # travis
+
+.travis.yml
