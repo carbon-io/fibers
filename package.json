@@ -2,7 +2,10 @@
   "name": "@carbon-io/fibers",
   "version": "0.8.1",
   "description": "Fibers",
-  "keywords": ["fibers", "carbon-io"],
+  "keywords": [
+    "fibers",
+    "carbon-io"
+  ],
   "contributors": [
     "Will Shulman <will@objectlabs.com>",
     "Greg Banks <greg@objectlabs.com>"
@@ -11,7 +14,6 @@
     "type": "git",
     "url": "https://github.com/carbon-io/fibers.git"
   },
-
   "main": "index.js",
   "engines": {
     "node": ">= 6.0.0"
@@ -27,10 +29,10 @@
   "dependencies": {
     "@carbon-io/fibrous": "0.5.1-ml",
     "debug": "2.4.x",
-    "fibers": "1.0.x"
+    "fibers": "2.0.x"
   },
   "scripts": {
-      "test": "node test"
+    "test": "node test"
   },
   "preferGlobal": false
 }
