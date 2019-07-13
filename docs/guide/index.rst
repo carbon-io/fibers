@@ -150,10 +150,10 @@ Additionally, you will often see test modules structured as follows:
   })
 
 This indicates that the module can be used as both an entry point and as a
-dependency. Dependants of modules written in this fashion should be careful to
+dependency. Dependents of modules written in this fashion should
 ``require`` these dependencies from within a call to ``__``. If this pattern is
 not adhered to, strange behavior will result as ``module.exports`` will be
-initialized asynchronously and the dependant module will receive an empty
+initialized asynchronously and the dependent module will receive an empty
 object (e.g. ``{}``) instead of the expected value.
 
 Carbon.io ``Service`` objects automatically wrap each HTTP request in
